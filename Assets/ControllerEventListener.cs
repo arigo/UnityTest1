@@ -48,6 +48,7 @@ public class ControllerEventListener : MonoBehaviour {
             Transform t = GetComponent<Transform>().transform;
             GameObject drop = Instantiate(paintDrop);
             drop.GetComponent<Transform>().position = t.position;
+            VRTK_SDK_Bridge.HapticPulseOnIndex(VRTK_DeviceFinder.GetControllerIndex(gameObject), 0.2f);
             nextDropTime += 0.1f;
         }
     }
