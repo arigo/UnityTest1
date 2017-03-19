@@ -6,7 +6,6 @@ using VRTK;
 public class ControllerEventListener : MonoBehaviour {
 
     public GameObject paintDrop;
-    public GameObject paintDropCanvas;
 
     float nextDropTime = -1;
 
