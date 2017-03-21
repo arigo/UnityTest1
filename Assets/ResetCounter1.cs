@@ -8,11 +8,17 @@ public class ResetCounter1 : MonoBehaviour {
     private void Start()
     {
         VRTK_InteractableObject io = GetComponent<VRTK_InteractableObject>();
+        io.InteractableObjectGrabbed += Grab;
         io.InteractableObjectUngrabbed += UnGrab;
+    }
+
+    private void Grab(object o, InteractableObjectEventArgs e)
+    {
+        GameObject.Find("Targets").BroadcastMessage("MsgInteractStart", gameObject);
     }
 
     private void UnGrab(object o, InteractableObjectEventArgs e)
     {
-        GameObject.Find("Targets").BroadcastMessage("MsgResetCounter");
+        GameObject.Find("Targets").BroadcastMessage("MsgInteractStop", gameObject);
     }
 }

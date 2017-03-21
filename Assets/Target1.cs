@@ -13,11 +13,13 @@ public class Target1 : MonoBehaviour {
 
     public GameObject scoreText;
     int counter = 0;
+    List<object> interacting;
 
     private void Start()
     {
         Renderer rend = GetComponent<Renderer>();
         restColor = rend.material.GetColor("_Color");
+        interacting = new List<object>();
     }
 
     void OnCollisionEnter(Collision collision)
@@ -30,17 +32,26 @@ public class Target1 : MonoBehaviour {
         Destroy(collision.gameObject);
         blinkStartTime = Time.time;
 
-        counter++;
-        ContactPoint contact0 = collision.contacts[0];
-        GameObject txt = Instantiate(scoreText,
-                            contact0.point + 0.5f * Vector3.up,
-                            Quaternion.LookRotation(contact0.normal));
-        txt.SendMessage("MsgSetText", counter);
-        txt.SendMessage("MsgStartAnimation", blinkTime);
+        if (interacting.Count == 0)
+        {
+            counter++;
+            ContactPoint contact0 = collision.contacts[0];
+            GameObject txt = Instantiate(scoreText,
+                                contact0.point + 0.5f * Vector3.up,
+                                Quaternion.LookRotation(contact0.normal));
+            txt.SendMessage("MsgSetText", counter);
+            txt.SendMessage("MsgStartAnimation", blinkTime);
+        }
     }
 
-    void MsgResetCounter()
+    void MsgInteractStart(object o)
     {
+        interacting.Add(o);
+    }
+
+    void MsgInteractStop(object o)
+    {
+        interacting.Remove(o);
         counter = 0;
     }
 
