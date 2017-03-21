@@ -6,7 +6,7 @@ public class Generator : MonoBehaviour {
 
     public GameObject ball;
     float nextTime;
-    const float interval = 2.0f;
+    public float interval = 2.0f;
 
 	// Use this for initialization
 	void Start () {

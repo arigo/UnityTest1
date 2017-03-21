@@ -31,7 +31,9 @@ public class Target1 : MonoBehaviour {
         Destroy(collision.gameObject);
         blinkStartTime = Time.time;
 
-        if (GetComponent<Renderer>().material.GetColor("_Color") != ballColor)
+        Color thiscolor = GetComponent<Renderer>().material.GetColor("_Color");
+        
+        if (thiscolor.r != ballColor.r || thiscolor.g != ballColor.g || thiscolor.b != ballColor.b)
         {
             say(collision, ":-(");
             counter = 0;
