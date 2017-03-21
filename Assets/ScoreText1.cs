@@ -6,9 +6,9 @@ public class ScoreText1 : MonoBehaviour {
 
     float startTime, prevTime, delay;
 
-    void MsgSetText(int counter)
+    void MsgSetText(string txt)
     {
-        GetComponent<TextMesh>().text = "" + counter;
+        GetComponent<TextMesh>().text = txt;
     }
 
     void MsgStartAnimation(float delay1)

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class Target1 : MonoBehaviour {
 
@@ -12,7 +13,8 @@ public class Target1 : MonoBehaviour {
     Color restColor;
 
     public GameObject scoreText;
-    int counter = 0, interacting = 0;
+    public int counter = 0;
+    int interacting = 0;
 
     private void Start()
     {
@@ -22,24 +24,45 @@ public class Target1 : MonoBehaviour {
 
     void OnCollisionEnter(Collision collision)
     {
-        Debug.Log("Target: OnCollisionEnter!");
-
         if (collision.gameObject.tag != "Ball")
             return;
 
+        Color ballColor = collision.gameObject.GetComponent<Renderer>().material.GetColor("_Color");
         Destroy(collision.gameObject);
         blinkStartTime = Time.time;
 
-        if (interacting == 0)
+        if (GetComponent<Renderer>().material.GetColor("_Color") != ballColor)
+        {
+            say(collision, ":-(");
+            counter = 0;
+        }
+        else if (interacting == 0)
         {
             counter++;
-            ContactPoint contact0 = collision.contacts[0];
-            GameObject txt = Instantiate(scoreText,
-                                contact0.point + 0.5f * Vector3.up,
-                                Quaternion.LookRotation(contact0.normal));
-            txt.SendMessage("MsgSetText", counter);
-            txt.SendMessage("MsgStartAnimation", blinkTime);
+            say(collision, "" + counter);
+
+            Target1[] targets = GameObject.Find("Targets").GetComponentsInChildren<Target1>();
+            bool all_reached = true;
+            foreach (Target1 t in targets)
+            {
+                all_reached = all_reached & (t.counter >= 10);
+            }
+            if (all_reached)
+            {
+                int cur = SceneManager.GetActiveScene().buildIndex;
+                SceneManager.LoadScene(cur + 1);
+            }
         }
+    }
+
+    private void say(Collision collision, string what)
+    {
+        ContactPoint contact0 = collision.contacts[0];
+        GameObject txt = Instantiate(scoreText,
+                                     contact0.point + 0.5f * Vector3.up,
+                                     Quaternion.LookRotation(contact0.normal));
+        txt.SendMessage("MsgSetText", what);
+        txt.SendMessage("MsgStartAnimation", blinkTime);
     }
 
     void MsgInteractStart(object o)

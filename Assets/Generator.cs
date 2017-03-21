@@ -10,7 +10,7 @@ public class Generator : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-        nextTime = interval;
+        nextTime = Time.time + interval;
 	}
 	
 	// Update is called once per frame
@@ -25,7 +25,9 @@ public class Generator : MonoBehaviour {
             return;
 
         Debug.Log("Adding! " + transform.position);
-        Instantiate(ball, transform.position, Quaternion.identity);
+        GameObject b = Instantiate(ball, transform.position, Quaternion.identity);
+        Renderer ballRend = b.GetComponent<Renderer>();
+        ballRend.material.SetColor("_Color", rend.material.GetColor("_Color"));
         nextTime += interval;
 	}
 }
