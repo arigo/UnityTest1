@@ -53,6 +53,8 @@ public class Target1 : MonoBehaviour {
                 SceneManager.LoadScene(cur + 1);
             }
         }
+        else
+            say(collision, "X");
     }
 
     private void say(Collision collision, string what)
