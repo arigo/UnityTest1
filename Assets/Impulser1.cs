@@ -10,17 +10,12 @@ public class Impulser1 : MonoBehaviour
     {
         Debug.Log("OnTriggerEnter!");
 
-        if (other.gameObject.tag != "Ball")
+        if (other.GetComponent<BallController>() == null)
             return;
 
         Transform mytr = GetComponent<Transform>();
         Rigidbody rb = other.GetComponent<Rigidbody>();
         rb.position = mytr.position;
         rb.velocity = impulseFactor * mytr.forward;
-    }
-
-    void OnUngrab()
-    {
-        Debug.Log("OnUngrab!");
     }
 }

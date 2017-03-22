@@ -2,61 +2,54 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.SceneManagement;
 
-public class Target1 : MonoBehaviour {
-
-    const float blinkTime = 0.8f;
-    float blinkStartTime = -1;
-
-    Color blinkColor = new Color(1, 1, 1);
-    Color restColor;
+public class Target1 : ColoredBehaviour {
 
     public GameObject scoreText;
-    public int counter = 0;
-    int interacting = 0;
+
+    const float blinkTime = 0.8f;
+    float m_blinkEndTime = -1;
+    static Color blinkColor = new Color(1, 1, 1);
+
+    int m_counter_index;
+
+    int counter
+    {
+        get { return GlobalData.instance.GetCounter(m_counter_index); }
+        set { GlobalData.instance.SetCounter(m_counter_index, value); }
+    }
 
     private void Start()
     {
-        Renderer rend = GetComponent<Renderer>();
-        restColor = rend.material.GetColor("_Color");
+        kind = kind;   /* set up color */
+        m_counter_index = GlobalData.instance.CreateCounter();
     }
 
     void OnCollisionEnter(Collision collision)
     {
-        if (collision.gameObject.tag != "Ball")
+        BallController bc = collision.gameObject.GetComponent<BallController>();
+        if (bc == null)
             return;
 
-        Color ballColor = collision.gameObject.GetComponent<Renderer>().material.GetColor("_Color");
         Destroy(collision.gameObject);
-        blinkStartTime = Time.time;
+        m_blinkEndTime = Time.time + blinkTime;
+        if (bc.disabled || counter < 0)
+        {
+            say(collision, "X");
+            m_blinkEndTime -= blinkTime / 2;
+            return;
+        }
 
-        Color thiscolor = GetComponent<Renderer>().material.GetColor("_Color");
-        
-        if (thiscolor.r != ballColor.r || thiscolor.g != ballColor.g || thiscolor.b != ballColor.b)
+        if (kind != bc.kind)
         {
             say(collision, ":-(");
             counter = 0;
         }
-        else if (interacting == 0)
+        else if (counter >= 0)
         {
             counter++;
             say(collision, "" + counter);
-
-            Target1[] targets = GameObject.Find("Targets").GetComponentsInChildren<Target1>();
-            bool all_reached = true;
-            foreach (Target1 t in targets)
-            {
-                all_reached = all_reached & (t.counter >= 10);
-            }
-            if (all_reached)
-            {
-                int cur = SceneManager.GetActiveScene().buildIndex;
-                SceneManager.LoadScene(cur + 1);
-            }
         }
-        else
-            say(collision, "X");
     }
 
     private void say(Collision collision, string what)
@@ -65,33 +58,18 @@ public class Target1 : MonoBehaviour {
         GameObject txt = Instantiate(scoreText,
                                      contact0.point + 0.5f * Vector3.up,
                                      Quaternion.LookRotation(contact0.normal));
-        txt.SendMessage("MsgSetText", what);
-        txt.SendMessage("MsgStartAnimation", blinkTime);
-    }
-
-    void MsgInteractStart(object o)
-    {
-        interacting++;
-    }
-
-    void MsgInteractStop(object o)
-    {
-        Debug.Assert(interacting > 0);
-        interacting--;
-        counter = 0;
+        txt.GetComponent<ScoreText1>().SetText(what, blinkTime);
     }
 
     private void Update()
     {
-        if (blinkStartTime >= 0)
+        if (m_blinkEndTime >= 0)
         {
-            float t1 = (Time.time - blinkStartTime) / blinkTime;
+            float t1 = (m_blinkEndTime - Time.time) / blinkTime;
+            SetColor(Color.Lerp(GetKindColor(), blinkColor, t1));
 
-            Renderer rend = GetComponent<Renderer>();
-            rend.material.SetColor("_Color", Color.Lerp(blinkColor, restColor, t1));
-
-            if (t1 >= 1)
-                blinkStartTime = -1;
+            if (t1 <= 0)
+                m_blinkEndTime = -1;
         }
     }
 }

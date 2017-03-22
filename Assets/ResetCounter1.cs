@@ -14,11 +14,11 @@ public class ResetCounter1 : MonoBehaviour {
 
     private void Grab(object o, InteractableObjectEventArgs e)
     {
-        GameObject.Find("Targets").BroadcastMessage("MsgInteractStart", gameObject);
+        GlobalData.instance.InteractionStart();
     }
 
     private void UnGrab(object o, InteractableObjectEventArgs e)
     {
-        GameObject.Find("Targets").BroadcastMessage("MsgInteractStop", gameObject);
+        GlobalData.instance.InteractionStop();
     }
 }

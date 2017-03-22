@@ -4,30 +4,25 @@ using UnityEngine;
 
 public class ScoreText1 : MonoBehaviour {
 
-    float startTime, prevTime, delay;
+    float m_startTime, m_prevTime, m_delay;
 
-    void MsgSetText(string txt)
+    public void SetText(string text, float delay)
     {
-        GetComponent<TextMesh>().text = txt;
-    }
-
-    void MsgStartAnimation(float delay1)
-    {
-        startTime = Time.time;
-        prevTime = startTime;
-        delay = delay1;
+        GetComponent<TextMesh>().text = text;
+        m_startTime = Time.time;
+        m_prevTime = m_startTime;
+        m_delay = delay;
     }
 
     private void Update()
     {
         Transform tr = GetComponent<Transform>();
-        tr.position += Vector3.up * (Time.time - prevTime) * 0.7f;
-        prevTime = Time.time;
+        tr.position += Vector3.up * (Time.time - m_prevTime) * 0.7f;
+        m_prevTime = Time.time;
 
-        float t1 = (Time.time - startTime) / delay;
+        float t1 = (Time.time - m_startTime) / m_delay;
+        GetComponent<TextMesh>().color = Color.Lerp(Color.white, Color.clear, t1);
         if (t1 >= 1)
             Destroy(gameObject);
-        else
-            GetComponent<TextMesh>().color = Color.Lerp(Color.white, Color.clear, t1);
     }
 }
