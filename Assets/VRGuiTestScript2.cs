@@ -6,7 +6,6 @@ using VRTK;
 
 public class VRGuiTestScript2 : MonoBehaviour {
 
-    public VRTK_ControllerEvents controllerEvents;
     public VRGuiExtensibleBox extensibleBoxPrefab;
 
     string[] labels = {
