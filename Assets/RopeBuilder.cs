@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using VRTK;
 
 
 public class RopeBuilder : MonoBehaviour {
@@ -14,6 +15,7 @@ public class RopeBuilder : MonoBehaviour {
     Vector3[] joints;
     Vector3[] joints_velocity;
     Transform[] links;
+    VRTK_InteractableObject[] links_interactable;
     Vector3 base_scale;
 
 	void Start()
@@ -22,12 +24,15 @@ public class RopeBuilder : MonoBehaviour {
         joints = new Vector3[nb_segments];
         joints_velocity = new Vector3[nb_segments];
         links = new Transform[nb_segments];
+        links_interactable = new VRTK_InteractableObject[nb_segments];
         for (int i = 0; i < nb_segments; i++)
         {
             float angle = (2 * Mathf.PI) * i / nb_segments;
             Vector3 position = radius * new Vector3(Mathf.Cos(angle), 0, Mathf.Sin(angle));
             joints[i] = transform.position + position;
             links[i] = Instantiate<Transform>(segment_prefab, transform);
+            links_interactable[i] = links[i].GetComponent<VRTK_InteractableObject>();    /* may be null */
+
         }
         base_scale = segment_prefab.localScale;
         if (segment_prefab.gameObject.activeInHierarchy)
@@ -48,6 +53,14 @@ public class RopeBuilder : MonoBehaviour {
 
     void Update()
     {
+        /* grabbed objects */
+        bool[] grabbed = new bool[nb_segments];
+        for (int i = 0; i < nb_segments; i++)
+        {
+            VRTK_InteractableObject io = links_interactable[i];
+            grabbed[i] = io != null && io.IsGrabbed();
+        }
+
         /* physics update: move all 'joints' slightly */
         float sqr_min_distance = base_scale.z * base_scale.z;
 
@@ -60,6 +73,22 @@ public class RopeBuilder : MonoBehaviour {
             /*   j1 --- j2 --- j3     we're moving j2 in this iteration */
 
             Vector3 j2 = joints[i];
+            if (grabbed[i] || grabbed[i == nb_segments - 1 ? 0 : i + 1])
+            {
+                joints_velocity[i] = Vector3.zero;
+                if (grabbed[i])
+                {
+                    Transform tr = links[i];
+                    joints[i] = tr.position + tr.localScale.z * 0.5f * tr.forward;
+                }
+                else
+                {
+                    Transform tr = links[i == nb_segments - 1 ? 0 : i + 1];
+                    joints[i] = tr.position - tr.localScale.z * 0.5f * tr.forward;
+                }
+                continue;
+            }
+
             Vector3 j21 = -jdiffs[i == 0 ? nb_segments - 1 : i - 1];
             Vector3 j23 = jdiffs[i];
             Vector3 accel = (j21 + j23) * tensile_strength;
@@ -91,15 +120,17 @@ public class RopeBuilder : MonoBehaviour {
             Vector3 j1 = j_prev;
             Vector3 j2 = joints[i];
 
-            Vector3 step = j2 - j1;
-            Transform tr = links[i];
-            Quaternion rot = Quaternion.LookRotation(step, tr.up);
-            tr.rotation = rot;
-            Vector3 scale = base_scale;
-            scale.z = step.magnitude;
-            tr.localScale = scale;
-            tr.position = (j1 + j2) * 0.5f;
-            
+            if (!grabbed[i])
+            {
+                Vector3 step = j2 - j1;
+                Transform tr = links[i];
+                Quaternion rot = Quaternion.LookRotation(step, tr.up);
+                tr.rotation = rot;
+                Vector3 scale = base_scale;
+                scale.z = step.magnitude;
+                tr.localScale = scale;
+                tr.position = (j1 + j2) * 0.5f;
+            }            
             j_prev = j2;
         }
     }
