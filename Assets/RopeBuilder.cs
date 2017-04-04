@@ -34,7 +34,7 @@ public class RopeBuilder : MonoBehaviour {
             Destroy(segment_prefab.gameObject);
     }
 
-    void BounceOff(int i, Vector3 normal)
+    void BounceOff(int i, Vector3 normal, float bounce=0.00001f)
     {
         Vector3 v = joints_velocity[i];
         if (Vector3.Dot(v, normal) < 0)
@@ -42,7 +42,7 @@ public class RopeBuilder : MonoBehaviour {
             Vector3 delta = Vector3.Project(v, normal);
             delta *= (1 + Random.Range(0, bounciness));
             joints_velocity[i] = v - delta;
-            joints[i] += normal.normalized * 0.0001f;
+            joints[i] += normal.normalized * bounce;
         }
     }
 
@@ -50,16 +50,18 @@ public class RopeBuilder : MonoBehaviour {
     {
         /* physics update: move all 'joints' slightly */
         float sqr_min_distance = base_scale.z * base_scale.z;
-        int i = Random.Range(0, nb_segments);
-        int i_step = Random.Range(0, 2) == 0 ? 1 : -1;
 
-        for (int k = 0; k < nb_segments; k++)
+        Vector3[] jdiffs = new Vector3[nb_segments];
+        for (int i = 0; i < nb_segments; i++)
+            jdiffs[i] = joints[i == nb_segments - 1 ? 0 : i + 1] - joints[i];
+
+        for (int i = 0; i < nb_segments; i++)
         {
-            Vector3 j1 = joints[i > 0 ? i - 1 : nb_segments - 1];
+            /*   j1 --- j2 --- j3     we're moving j2 in this iteration */
+
             Vector3 j2 = joints[i];
-            Vector3 j3 = joints[i == nb_segments - 1 ? 0 : i + 1];
-            Vector3 j21 = j1 - j2;
-            Vector3 j23 = j3 - j2;
+            Vector3 j21 = -jdiffs[i == 0 ? nb_segments - 1 : i - 1];
+            Vector3 j23 = jdiffs[i];
             Vector3 accel = (j21 + j23) * tensile_strength;
             Vector3 v = joints_velocity[i] + Time.deltaTime * accel;
             joints_velocity[i] = v;
@@ -78,19 +80,13 @@ public class RopeBuilder : MonoBehaviour {
                                                           movement.magnitude,
                                                           Physics.DefaultRaycastLayers,
                                                           QueryTriggerInteraction.Ignore))
-                BounceOff(i, hitInfo.normal);
-
-            i += i_step;
-            if (i < 0)
-                i += nb_segments;
-            else if (i >= nb_segments)
-                i -= nb_segments;
+                BounceOff(i, hitInfo.normal, 0.0001f);
         }
 
         /* model update: make all gameobjects in 'links' match the position expected from 'joints' */
         Vector3 j_prev = joints[nb_segments - 1];
 
-        for (i = 0; i < nb_segments; i++)
+        for (int i = 0; i < nb_segments; i++)
         {
             Vector3 j1 = j_prev;
             Vector3 j2 = joints[i];
