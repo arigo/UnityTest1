@@ -4,35 +4,33 @@
 	}
 		SubShader{
 
-		Tags{ "RenderType" = "Opaque" }
+		Tags{ "RenderType" = "Transparent" }
 
-		Cull Front
+		//Cull Back
 
 		CGPROGRAM
 
 #pragma surface surf Lambert vertex:vert
 		sampler2D _MainTex;
 
-	struct Input {
-		float2 uv_MainTex;
-		float4 color : COLOR;
-	};
+		struct Input {
+			float2 uv_MainTex;
+			float4 color : COLOR;
+		};
 
+		void vert(inout appdata_full v)
+		{
+		}
 
-	void vert(inout appdata_full v)
-	{
-		v.normal.xyz = v.normal * -1;
-	}
+		void surf(Input IN, inout SurfaceOutput o) {
+			fixed3 result = tex2D(_MainTex, IN.uv_MainTex);
+			o.Albedo = result.rgb;
+			o.Alpha = 0.5;
+		}
 
-	void surf(Input IN, inout SurfaceOutput o) {
-		fixed3 result = tex2D(_MainTex, IN.uv_MainTex);
-		o.Albedo = result.rgb;
-		o.Alpha = 1;
-	}
-
-	ENDCG
+		ENDCG
 
 	}
 
-		Fallback "Diffuse"
+	Fallback "Diffuse"
 }
