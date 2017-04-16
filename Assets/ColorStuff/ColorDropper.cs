@@ -9,6 +9,8 @@ public class ColorDropper : MonoBehaviour {
     public float dropFrequency = 0.1f;
 
     float nextDropTime = -1;
+    Vector3 depositPosition = new Vector3(0, -0.02f, 0.032f);
+    Quaternion depositRotation = Quaternion.AngleAxis(60, new Vector3(1, 0, 0));
 
     private void Start()
     {
@@ -31,7 +33,8 @@ public class ColorDropper : MonoBehaviour {
         if (nextDropTime >= 0 && nextDropTime <= Time.time)
         {
             GameObject drop = Instantiate(dropPrefab);
-            drop.transform.position = transform.position;
+            drop.transform.position = transform.TransformPoint(depositPosition);
+            drop.transform.rotation = transform.rotation * depositRotation;
             drop.GetComponent<Renderer>().material.color = GetComponent<ColorChanger>().selected_color;
             VRTK_SDK_Bridge.HapticPulseOnIndex(VRTK_DeviceFinder.GetControllerIndex(gameObject), 0.2f);
             nextDropTime += dropFrequency;
