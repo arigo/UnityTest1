@@ -6,25 +6,29 @@ using VRTK;
 
 public class ColorChanger : MonoBehaviour {
 
-    public GameObject colorViewParent;
-    public Renderer colorView;
+    public GameObject colorViewParentPrefab;
     public GameObject colorSelectorDisc;
     public Renderer colorSelectorRenderer;
 
+    GameObject colorViewParent;
+    Renderer colorView;
     bool selector_active = false;
     Vector3 color_selection_anchor;
     Vector3 color_from_cylinder_origin;
 
     public Color selected_color
     {
-        get { return colorView.material.color; }
-        set { colorView.material.color = value; }
+        get { return colorView.sharedMaterial.color; }
+        set { colorView.sharedMaterial.color = value; }
     }
 
     SteamVR_Events.Action newPosesAppliedAction;
 
     private void Start()
     {
+        colorViewParent = Instantiate(colorViewParentPrefab);
+        colorView = colorViewParent.GetComponentInChildren<Renderer>();
+
         colorSelectorDisc.SetActive(false);
         colorSelectorRenderer.material.mainTexture = CreateTexture.HSV_Texture();
 
@@ -57,8 +61,14 @@ public class ColorChanger : MonoBehaviour {
 
     private void OnNewPosesApplied()
     {
+        if (!isActiveAndEnabled)
+        {
+            colorViewParent.SetActive(false);
+            return;
+        }
         colorViewParent.transform.position = transform.position;
         colorViewParent.transform.rotation = transform.rotation;
+        colorViewParent.SetActive(true);
 
         if (selector_active)
         {
