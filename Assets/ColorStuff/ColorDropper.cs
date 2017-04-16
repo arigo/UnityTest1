@@ -6,6 +6,7 @@ using VRTK;
 public class ColorDropper : MonoBehaviour {
 
     public GameObject dropPrefab;
+    public Transform dropScene;
     public float dropFrequency = 0.1f;
 
     float nextDropTime = -1;
@@ -32,7 +33,7 @@ public class ColorDropper : MonoBehaviour {
     {
         if (nextDropTime >= 0 && nextDropTime <= Time.time)
         {
-            GameObject drop = Instantiate(dropPrefab);
+            GameObject drop = Instantiate(dropPrefab, dropScene);
             drop.transform.position = transform.TransformPoint(depositPosition);
             drop.transform.rotation = transform.rotation * depositRotation;
             drop.GetComponent<Renderer>().material.color = GetComponent<ColorChanger>().selected_color;
