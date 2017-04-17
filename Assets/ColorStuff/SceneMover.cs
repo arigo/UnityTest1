@@ -63,7 +63,9 @@ public class SceneMover : MonoBehaviour {
             {
                 if (rend.transform.position.y < floor_y)
                 {
-                    flattenedDrawing.AddSplash(rend.transform.position, rend.material.color);
+                    Color col = rend.material.color;
+                    col.a = 1;
+                    flattenedDrawing.AddSplash(rend.transform.position, col);
                     Destroy(rend.gameObject);
                 }
             }
