@@ -9,6 +9,7 @@ public class BallInfo
 {
     public const float SPEED_LIMIT = 1.1f;
     public const float SPEED_EXPONENT = -5f;
+    public const float SPEED_UPPER_LIMIT = 23f;
     public const float MIN_X = -4f;
     public const float MAX_X = 4f;
     public const float MIN_Y = 0.32f;
@@ -30,6 +31,8 @@ public class BallInfo
 
     public int Update(float dt, float speed_reduction)
     {
+        if (speed > SPEED_UPPER_LIMIT)
+            speed = SPEED_UPPER_LIMIT;
         Vector3 forward = transform.forward;
         Vector3 p = transform.position + forward * (dt * speed);
         transform.position = p;
