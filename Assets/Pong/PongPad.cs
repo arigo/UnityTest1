@@ -10,11 +10,13 @@ public class PongPad : MonoBehaviour {
 
     GameObject padObject;
     SteamVR_Events.Action newPosesAppliedAction;
+    int pad_index;
 
     void Start()
     {
         padObject = Instantiate(padObjectPrefab);
         padObject.SetActive(false);
+        pad_index = -1;
 
         padObject.GetComponent<PadIndex>().controller = gameObject;
 
@@ -26,10 +28,19 @@ public class PongPad : MonoBehaviour {
     {
         if (!isActiveAndEnabled)
         {
-            padObject.SetActive(false);
+            if (pad_index >= 0) {
+                padObject.SetActive(false);
+                ballScene.SetPad(pad_index, null);
+                pad_index = -1;
+            }
             return;
         }
-        padObject.SetActive(true);
+        if (pad_index < 0)
+        {
+            pad_index = (int)padObject.transform.GetComponent<PadIndex>().GetPadIndex();
+            ballScene.SetPad(pad_index, transform);
+            padObject.SetActive(true);
+        }
         padObject.transform.position = transform.position;
         padObject.transform.rotation = transform.rotation;
     }

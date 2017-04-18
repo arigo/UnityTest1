@@ -8,10 +8,14 @@ public class PadIndex : MonoBehaviour {
 
     public GameObject controller;
 
+    public uint GetPadIndex()
+    {
+        return VRTK_DeviceFinder.GetControllerIndex(controller);
+    }
+
     public void HapticPulse(float strength)
     {
-        uint pad_index = VRTK_DeviceFinder.GetControllerIndex(controller);
-        VRTK_SDK_Bridge.HapticPulseOnIndex(pad_index, 0.2f);
+        VRTK_SDK_Bridge.HapticPulseOnIndex(GetPadIndex(), strength);
     }
 
 }
