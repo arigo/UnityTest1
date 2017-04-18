@@ -74,10 +74,12 @@ public class BallScene : MonoBehaviour {
     public Transform localBallPrefab, remotePadPrefab, remoteHeadSet;
     public NetworkConnecter networkConnecter;
     public Transform localCamera;
+    public float padUpdatesFrequency = 15f;
+    public float padExpectedUpdatesFrequency = 10f;
 
     List<BallInfo> balls;
     Dictionary<int, BallInfo> balls_by_id;
-    Transform[] remote_pads;
+    RemotePad[] remote_pads;
     List<Transform> local_pads;
     bool sticky_message;
 
@@ -85,7 +87,7 @@ public class BallScene : MonoBehaviour {
     {
         local_pads = new List<Transform>();
         local_pads.Add(localCamera);
-        remote_pads = new Transform[0];
+        remote_pads = new RemotePad[0];
     }
 
     void Start()
@@ -306,22 +308,27 @@ public class BallScene : MonoBehaviour {
 
         int old_length = remote_pads.Length;
         for (int i = count; i < old_length; i++)
-            Destroy(remote_pads[i].gameObject);
+            if (i != 0)
+                Destroy(remote_pads[i].gameObject);
+
         Array.Resize<Transform>(ref remote_pads, count);
+
         for (int i = old_length; i < count; i++)
         {
             Transform tr = i == 0 ? remoteHeadSet : Instantiate<Transform>(remotePadPrefab);
-            remote_pads[i] = tr;
             foreach (var coll in tr.GetComponentsInChildren<Collider>())
                 coll.enabled = false;
+            RemotePad rp = tr.GetComponent<RemotePad>();
+            if (rp == null)
+                rp = tr.AddComponent<RemotePad>();
+            rp.Configure(1f / padExpectedUpdatesFrequency);
+            remote_pads[i] = rp;
         }
     }
 
     public void MsgRemotePad(int index, Vector3 position, Quaternion rotation)
     {
-        Transform tr = remote_pads[index];
-        tr.position = position;
-        tr.rotation = rotation;
+        remote_pads[index].MessageMoveTo(position, rotation);
     }
 
     public void AddPad(Transform transform)
@@ -338,7 +345,7 @@ public class BallScene : MonoBehaviour {
     {
         while (true)
         {
-            yield return new WaitForSeconds(0.06f);
+            yield return new WaitForSeconds(1f / padUpdatesFrequency);
 
             int n = local_pads.Count;
             var positions = new Vector3[n];
