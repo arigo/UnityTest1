@@ -32,7 +32,7 @@ public class NetworkConnecter : MonoBehaviour {
         if (err != null)
         {
             queued_error = null;
-            ballScene.ReportMessage(err);
+            ballScene.ReportMessage(err, true);
         }
 
         lock (queued_messages)

@@ -71,17 +71,20 @@ public class BallScene : MonoBehaviour {
     public Text scoreText;
     public int score1, score2;
     public Transform remoteBallPrefab;
-    public Transform localBallPrefab, remotePadPrefab;
+    public Transform localBallPrefab, remotePadPrefab, remoteHeadSet;
     public NetworkConnecter networkConnecter;
+    public Transform localCamera;
 
     List<BallInfo> balls;
     Dictionary<int, BallInfo> balls_by_id;
     Transform[] remote_pads;
     List<Transform> local_pads;
+    bool sticky_message;
 
     void Awake()
     {
         local_pads = new List<Transform>();
+        local_pads.Add(localCamera);
         remote_pads = new Transform[0];
     }
 
@@ -249,9 +252,12 @@ public class BallScene : MonoBehaviour {
 
     /********************************************************************************************/
 
-    public void ReportMessage(string text)
+    public void ReportMessage(string text, bool sticky=false)
     {
+        if (sticky_message)
+            return;
         scoreText.text = text;
+        sticky_message = sticky;
     }
 
     public void MsgReset()
@@ -304,7 +310,7 @@ public class BallScene : MonoBehaviour {
         Array.Resize<Transform>(ref remote_pads, count);
         for (int i = old_length; i < count; i++)
         {
-            Transform tr = Instantiate<Transform>(remotePadPrefab);
+            Transform tr = i == 0 ? remoteHeadSet : Instantiate<Transform>(remotePadPrefab);
             remote_pads[i] = tr;
             foreach (var coll in tr.GetComponentsInChildren<Collider>())
                 coll.enabled = false;
