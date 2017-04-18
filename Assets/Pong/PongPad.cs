@@ -10,15 +10,18 @@ public class PongPad : MonoBehaviour {
 
     GameObject padObject;
     SteamVR_Events.Action newPosesAppliedAction;
-    int pad_index;
+    public Vector3 current_velocity;
+    Vector3 previous_position;
+    float previous_time;
+    bool pad_visible;
 
     void Start()
     {
         padObject = Instantiate(padObjectPrefab);
         padObject.SetActive(false);
-        pad_index = -1;
+        pad_visible = false;
 
-        padObject.GetComponent<PadIndex>().controller = gameObject;
+        padObject.GetComponent<PadIndex>().controller = this;
 
         newPosesAppliedAction = SteamVR_Events.NewPosesAppliedAction(OnNewPosesApplied);
         newPosesAppliedAction.enabled = true;
@@ -28,20 +31,34 @@ public class PongPad : MonoBehaviour {
     {
         if (!isActiveAndEnabled)
         {
-            if (pad_index >= 0) {
+            if (pad_visible) {
                 padObject.SetActive(false);
-                ballScene.SetPad(pad_index, null);
-                pad_index = -1;
+                ballScene.RemovePad(transform);
+                pad_visible = false;
             }
             return;
         }
-        if (pad_index < 0)
+        if (!pad_visible)
         {
-            pad_index = (int)padObject.transform.GetComponent<PadIndex>().GetPadIndex();
-            ballScene.SetPad(pad_index, transform);
+            ballScene.AddPad(transform);
             padObject.SetActive(true);
+            pad_visible = true;
+
+            current_velocity = Vector3.zero;
         }
+        else
+        {
+            current_velocity = (transform.position - previous_position) / (Time.time - previous_time);
+        }
+        previous_position = transform.position;
+        previous_time = Time.time;
+
         padObject.transform.position = transform.position;
         padObject.transform.rotation = transform.rotation;
+    }
+
+    public Vector3 GetCurrentVelocity()
+    {
+        return current_velocity;
     }
 }

@@ -51,6 +51,17 @@ public class BallInfo
     {
         GameObject.Destroy(transform.gameObject);
     }
+
+    public Vector3 GetVelocity()
+    {
+        return transform.forward * speed;
+    }
+
+    public void SetVelocity(Vector3 velocity)
+    {
+        transform.rotation = Quaternion.LookRotation(velocity);
+        speed = velocity.magnitude;
+    }
 }
 
 
@@ -60,16 +71,17 @@ public class BallScene : MonoBehaviour {
     public Text scoreText;
     public int score1, score2;
     public Transform remoteBallPrefab;
-    public Transform remotePadPrefab;
+    public Transform localBallPrefab, remotePadPrefab;
     public NetworkConnecter networkConnecter;
 
     List<BallInfo> balls;
     Dictionary<int, BallInfo> balls_by_id;
-    Transform[] local_pads, remote_pads;
+    Transform[] remote_pads;
+    List<Transform> local_pads;
 
     void Awake()
     {
-        local_pads = new Transform[0];
+        local_pads = new List<Transform>();
         remote_pads = new Transform[0];
     }
 
@@ -97,7 +109,7 @@ public class BallScene : MonoBehaviour {
 
     void UpdateBall(BallInfo info)
     {
-        networkConnecter.SendSpawn(info.id, info.transform.position, info.transform.forward * info.speed);
+        networkConnecter.SendSpawn(info.id, info.transform.position, info.GetVelocity());
     }
 
     void Update()
@@ -109,8 +121,8 @@ public class BallScene : MonoBehaviour {
         {
             var ball = balls[i];
             int bump = ball.Update(dt, speed_reduction);
-            if (bump == 0) AddSplash(ball, endWall1, ref score2);
-            if (bump == 1) AddSplash(ball, endWall2, ref score1);
+            if (bump == 0) HitWall(ball, endWall1, ref score2);
+            if (bump == 1) HitWall(ball, endWall2, ref score1);
         }
     }
 
@@ -126,21 +138,19 @@ public class BallScene : MonoBehaviour {
                 if (pad_index == null)
                     continue;
                 Vector3 axis = coll.transform.up;
-                bool send_update = false;
+
+                Vector3 relative_velocity = ball.GetVelocity() - pad_index.controller.GetCurrentVelocity();
+                
                 float side_position = Vector3.Dot(axis, coll.transform.position - ball.transform.position);
-                float side_movement = Vector3.Dot(axis, ball.transform.forward);
+                float side_movement = Vector3.Dot(axis, relative_velocity);
                 if (side_position * side_movement > 0)
                 {
-                    ball.transform.forward = Vector3.Reflect(ball.transform.forward, axis);
+                    relative_velocity = Vector3.Reflect(relative_velocity, axis);
+                    relative_velocity -= Mathf.Sign(side_position) * 3f * axis;   /* automatic extra impulse */
+                    ball.SetVelocity(relative_velocity + pad_index.controller.GetCurrentVelocity());
                     pad_index.HapticPulse(0.5f);
-                    send_update = true;
-                }
-                float move = ball.radius - Mathf.Abs(side_position);
-                if (move > 0)
-                    ball.transform.position -= axis * move * Mathf.Sign(side_position);
-
-                if (send_update)
                     UpdateBall(ball);
+                }
             }
     }
 
@@ -184,13 +194,32 @@ public class BallScene : MonoBehaviour {
         return tex2d;
     }
 
-    void AddSplash(BallInfo ball, Renderer endWall, ref int current_score)
+    void HitWall(BallInfo ball, Renderer endWall, ref int current_score)
     {
         if (endWall == null)
             return;
 
-        Color color = ball.transform.GetComponent<Renderer>().sharedMaterial.color;
         Vector3 position = ball.transform.position;
+
+        if (endWall == endWall2 && networkConnecter.isConnected())
+        {
+            /* no splash, wait for the remote to notify us */
+        }
+        else
+        {
+            AddSplash(ball.transform, position, endWall, ref current_score);
+        }
+        ball.Destroy();
+        balls.Remove(ball);
+        balls_by_id.Remove(ball.id);
+
+        if (endWall == endWall1)
+            networkConnecter.SendSplash(ball.id, position);
+    }
+
+    void AddSplash(Transform color_tr, Vector3 position, Renderer endWall, ref int current_score)
+    {
+        Color color = color_tr.GetComponent<Renderer>().sharedMaterial.color;
         position = endWall.transform.InverseTransformPoint(position);
         float radius = splashRadius / endWall.transform.lossyScale.magnitude;
 
@@ -213,10 +242,6 @@ public class BallScene : MonoBehaviour {
                              0, 0, 0, 0);
         GL.PopMatrix();
         RenderTexture.active = prev;
-
-        ball.Destroy();
-        balls.Remove(ball);
-        balls_by_id.Remove(ball.id);
 
         current_score++;
         ReportMessage(score2 + " - " + score1);
@@ -251,7 +276,7 @@ public class BallScene : MonoBehaviour {
             info = balls_by_id[id];
         else
         {
-            Transform ball_tr = Instantiate<Transform>(remoteBallPrefab);
+            Transform ball_tr = Instantiate<Transform>(id < 0 ? remoteBallPrefab : localBallPrefab);
 
             info = new BallInfo(ball_tr, id);
             balls.Add(info);
@@ -259,8 +284,13 @@ public class BallScene : MonoBehaviour {
         }
 
         info.transform.position = position;
-        info.transform.rotation = Quaternion.LookRotation(velocity);
-        info.speed = velocity.magnitude;
+        info.SetVelocity(velocity);
+    }
+
+    public void MsgSplash(int id, Vector3 position)
+    {
+        Transform prefab = id < 0 ? remoteBallPrefab : localBallPrefab;
+        AddSplash(prefab, position, endWall2, ref score1);
     }
 
     public void MsgRemotePadCount(int count)
@@ -288,11 +318,14 @@ public class BallScene : MonoBehaviour {
         tr.rotation = rotation;
     }
 
-    public void SetPad(int index, Transform transform)   /* or null */
+    public void AddPad(Transform transform)
     {
-        if (index >= local_pads.Length)
-            Array.Resize<Transform>(ref local_pads, index + 1);
-        local_pads[index] = transform;
+        local_pads.Add(transform);
+    }
+
+    public void RemovePad(Transform transform)
+    {
+        local_pads.Remove(transform);
     }
 
     IEnumerable SendPadUpdates()
@@ -301,23 +334,15 @@ public class BallScene : MonoBehaviour {
         {
             yield return new WaitForSeconds(0.06f);
 
-            int n = 0;
-            for (int i = 0; i < local_pads.Length; i++)
-                if (local_pads[i] != null)
-                    n++;
-
+            int n = local_pads.Count;
             var positions = new Vector3[n];
             var rotations = new Quaternion[n];
-            n = 0;
-            for (int i = 0; i < local_pads.Length; i++)
+
+            for (int i = 0; i < n; i++)
             {
                 Transform tr = local_pads[i];
-                if (tr != null)
-                {
-                    positions[n] = tr.position;
-                    rotations[n] = tr.rotation;
-                    n++;
-                }
+                positions[i] = tr.position;
+                rotations[i] = tr.rotation;
             }
             networkConnecter.SendPads(positions, rotations);
         }

@@ -114,9 +114,10 @@ public class NetworkConnecter : MonoBehaviour {
 
     /************************************************************************/
 
-    const int MSG_RESET = 0;
-    const int MSG_SPAWN = 1;
-    const int MSG_PADS  = 2;
+    const int MSG_RESET  = 0;
+    const int MSG_SPAWN  = 1;
+    const int MSG_PADS   = 2;
+    const int MSG_SPLASH = 3;
 
     void ProcessQueuedMessages()
     {
@@ -147,13 +148,23 @@ public class NetworkConnecter : MonoBehaviour {
                             Quaternion.Euler(message[i + 3], message[i + 4] + 180, message[i + 5]));
                     }
                     break;
+
+                case MSG_SPLASH:
+                    ballScene.MsgSplash(-(int)message[1],
+                        new Vector3(-message[2], message[3], -message[4]));
+                    break;
             }
         }
     }
 
+    public bool isConnected()
+    {
+        return ws1 != null;
+    }
+
     void _Send(float[] data)
     {
-        if (ws1 != null)
+        if (isConnected())
         {
             lock (queued_outgoing_messages)
             {
@@ -192,5 +203,11 @@ public class NetworkConnecter : MonoBehaviour {
             data[i + 5] = angles.z;
         }
         _Send(data);
+    }
+
+    public void SendSplash(int id, Vector3 position)
+    {
+        _Send(new float[] { MSG_SPLASH, id,
+            position.x, position.y, position.z });
     }
 }

@@ -6,11 +6,11 @@ using VRTK;
 
 public class PadIndex : MonoBehaviour {
 
-    public GameObject controller;
+    public PongPad controller;
 
     public uint GetPadIndex()
     {
-        return VRTK_DeviceFinder.GetControllerIndex(controller);
+        return VRTK_DeviceFinder.GetControllerIndex(controller.gameObject);
     }
 
     public void HapticPulse(float strength)
