@@ -77,7 +77,7 @@ public class BallScene : MonoBehaviour {
     public float padUpdatesFrequency = 15f;
     public float padExpectedUpdatesFrequency = 10f;
 
-    List<BallInfo> balls;
+    public List<BallInfo> balls;
     Dictionary<int, BallInfo> balls_by_id;
     RemotePad[] remote_pads;
     List<Transform> local_pads;
@@ -112,7 +112,7 @@ public class BallScene : MonoBehaviour {
         UpdateBall(info);
     }
 
-    void UpdateBall(BallInfo info)
+    public void UpdateBall(BallInfo info)
     {
         networkConnecter.SendSpawn(info.id, info.transform.position, info.GetVelocity());
     }
@@ -129,34 +129,6 @@ public class BallScene : MonoBehaviour {
             if (bump == 0) HitWall(ball, endWall1, ref score2);
             if (bump == 1) HitWall(ball, endWall2, ref score1);
         }
-    }
-
-    void FixedUpdate()
-    {
-        Collider[] colls = new Collider[1];
-        foreach (var ball in balls)
-            if (Physics.OverlapSphereNonAlloc(ball.transform.position, ball.radius, colls,
-                                              Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore) > 0)
-            {
-                Collider coll = colls[0];
-                PadIndex pad_index = coll.GetComponentInParent<PadIndex>();
-                if (pad_index == null)
-                    continue;
-                Vector3 axis = coll.transform.up;
-
-                Vector3 relative_velocity = ball.GetVelocity() - pad_index.controller.GetCurrentVelocity();
-                
-                float side_position = Vector3.Dot(axis, coll.transform.position - ball.transform.position);
-                float side_movement = Vector3.Dot(axis, relative_velocity);
-                if (side_position * side_movement > 0)
-                {
-                    relative_velocity = Vector3.Reflect(relative_velocity, axis);
-                    relative_velocity -= Mathf.Sign(side_position) * 3f * axis;   /* automatic extra impulse */
-                    ball.SetVelocity(relative_velocity + pad_index.controller.GetCurrentVelocity());
-                    pad_index.HapticPulse(0.5f);
-                    UpdateBall(ball);
-                }
-            }
     }
 
     /********************************************************************************************/

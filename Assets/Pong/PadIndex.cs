@@ -17,5 +17,4 @@ public class PadIndex : MonoBehaviour {
     {
         VRTK_SDK_Bridge.HapticPulseOnIndex(GetPadIndex(), strength);
     }
-
 }
