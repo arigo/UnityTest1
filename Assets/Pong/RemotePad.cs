@@ -26,7 +26,7 @@ public class RemotePad : MonoBehaviour {
 
     void Update()
     {
-        if (arrival_time <= 0)
+        if (arrival_time == 0)
             return;
 
         float remaining = arrival_time - Time.time;

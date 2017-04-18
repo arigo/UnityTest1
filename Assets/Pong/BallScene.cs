@@ -311,7 +311,7 @@ public class BallScene : MonoBehaviour {
             if (i != 0)
                 Destroy(remote_pads[i].gameObject);
 
-        Array.Resize<Transform>(ref remote_pads, count);
+        Array.Resize<RemotePad>(ref remote_pads, count);
 
         for (int i = old_length; i < count; i++)
         {
@@ -320,7 +320,7 @@ public class BallScene : MonoBehaviour {
                 coll.enabled = false;
             RemotePad rp = tr.GetComponent<RemotePad>();
             if (rp == null)
-                rp = tr.AddComponent<RemotePad>();
+                rp = tr.gameObject.AddComponent<RemotePad>();
             rp.Configure(1f / padExpectedUpdatesFrequency);
             remote_pads[i] = rp;
         }
