@@ -28,10 +28,11 @@ public class BallInfo
         radius = transform.lossyScale.y * 0.5f;
     }
 
-    public int Update(float dt, float speed_reduction)
+    public int Update(float dt, float speed_reduction, out Vector3 prev_position)
     {
         Vector3 forward = transform.forward;
-        Vector3 p = transform.position + forward * (dt * speed);
+        prev_position = transform.position;
+        Vector3 p = prev_position + forward * (dt * speed);
         transform.position = p;
 
         int bump = -1;
@@ -121,42 +122,44 @@ public class BallScene : MonoBehaviour {
     {
         float dt = Time.deltaTime;
         float speed_reduction = Mathf.Exp(dt * BallInfo.SPEED_EXPONENT);
+        Collider[] colls = new Collider[1];
 
         for (int i = balls.Count - 1; i >= 0; i--)
         {
+            Vector3 prev_position;
             var ball = balls[i];
-            int bump = ball.Update(dt, speed_reduction);
-            if (bump == 0) HitWall(ball, endWall1, ref score2);
-            if (bump == 1) HitWall(ball, endWall2, ref score1);
+            int bump = ball.Update(dt, speed_reduction, out prev_position);
+            if (bump < 0)
+            {
+                if (Physics.OverlapCapsuleNonAlloc(prev_position, ball.transform.position, ball.radius,
+                                                   colls, Physics.DefaultRaycastLayers,
+                                                   QueryTriggerInteraction.Ignore) > 0)
+                    TouchBall(ball, colls[0]);
+            }
+            else if (bump == 0) HitWall(ball, endWall1, ref score2);
+            else if (bump == 1) HitWall(ball, endWall2, ref score1);
         }
     }
 
-    void FixedUpdate()
+    void TouchBall(BallInfo ball, Collider coll)
     {
-        Collider[] colls = new Collider[1];
-        foreach (var ball in balls)
-            if (Physics.OverlapSphereNonAlloc(ball.transform.position, ball.radius, colls,
-                                              Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore) > 0)
-            {
-                Collider coll = colls[0];
-                PadIndex pad_index = coll.GetComponentInParent<PadIndex>();
-                if (pad_index == null)
-                    continue;
-                Vector3 axis = coll.transform.up;
+        PadIndex pad_index = coll.GetComponentInParent<PadIndex>();
+        if (pad_index == null)
+            return;
+        Vector3 axis = coll.transform.up;
 
-                Vector3 relative_velocity = ball.GetVelocity() - pad_index.controller.GetCurrentVelocity();
-                
-                float side_position = Vector3.Dot(axis, coll.transform.position - ball.transform.position);
-                float side_movement = Vector3.Dot(axis, relative_velocity);
-                if (side_position * side_movement > 0)
-                {
-                    relative_velocity = Vector3.Reflect(relative_velocity, axis);
-                    relative_velocity -= Mathf.Sign(side_position) * 3f * axis;   /* automatic extra impulse */
-                    ball.SetVelocity(relative_velocity + pad_index.controller.GetCurrentVelocity());
-                    pad_index.HapticPulse(0.5f);
-                    UpdateBall(ball);
-                }
-            }
+        Vector3 relative_velocity = ball.GetVelocity() - pad_index.controller.GetCurrentVelocity();
+
+        float side_position = Vector3.Dot(axis, coll.transform.position - ball.transform.position);
+        float side_movement = Vector3.Dot(axis, relative_velocity);
+        if (side_position * side_movement > 0)
+        {
+            relative_velocity = Vector3.Reflect(relative_velocity, axis);
+            relative_velocity -= Mathf.Sign(side_position) * 3f * axis;   /* automatic extra impulse */
+            ball.SetVelocity(relative_velocity + pad_index.controller.GetCurrentVelocity());
+            pad_index.HapticPulse(0.5f);
+            UpdateBall(ball);
+        }
     }
 
     /********************************************************************************************/
