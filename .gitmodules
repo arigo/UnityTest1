@@ -1,0 +1,3 @@
+[submodule "Assets/BaroqueUI"]
+	path = Assets/BaroqueUI
+	url = https://github.com/arigo/BaroqueUI.git
