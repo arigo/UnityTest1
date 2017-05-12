@@ -21,6 +21,7 @@ public class MirrorWindow : MonoBehaviour
 
     volatile IntPtr m_rendered;
     IntPtr m_updated;
+    bool m_currently_foreground;
 
 
     private void Start()
@@ -63,8 +64,7 @@ public class MirrorWindow : MonoBehaviour
             m_PixelsHandle = GCHandle.Alloc(m_Pixels, GCHandleType.Pinned);
         }
 
-        quad1.GetComponent<Renderer>().material.mainTexture = m_Texture;
-        quad2.GetComponent<Renderer>().material.mainTexture = m_Texture;   /* two-faced, for now */
+        UpdateTexture();
 
         quad1.transform.localScale = new Vector3(width, height, 1);
         quad2.transform.localScale = new Vector3(width, height, 1);
@@ -78,9 +78,38 @@ public class MirrorWindow : MonoBehaviour
         quad2.SetActive(true);
     }
 
-    void Update()
+    void UpdateTexture()
+    {
+        m_currently_foreground = toplevel_updater.IsForeground(hWnd);
+
+        Renderer rend = quad1.GetComponent<Renderer>();
+        if (m_currently_foreground)
+            rend.material = Resources.Load<Material>("Highlighted Window");
+        else
+            rend.material = Resources.Load<Material>("Nonhighlighted Window");
+
+        rend.material.mainTexture = m_Texture;
+        quad2.GetComponent<Renderer>().sharedMaterial = rend.sharedMaterial;
+    }
+
+    private void Update()
+    {
+        IntPtr rendered = m_rendered;
+        if (rendered != m_updated)
+        {
+            if (m_currently_foreground != toplevel_updater.IsForeground(hWnd))
+                UpdateTexture();
+
+            m_Texture.SetPixels32(m_Pixels, 0);
+            m_Texture.Apply();
+            m_updated = rendered;
+        }
+    }
+
+    void FixedUpdate()
     {
         CaptureDLL.Capture_GetWindowSize(hWnd, out m_width, out m_height);
+
         if (m_width < 0)
         {
             Destroy(gameObject);
@@ -88,22 +117,10 @@ public class MirrorWindow : MonoBehaviour
         }
 
         if (m_Texture == null || m_Texture.width != m_width || m_Texture.height != m_height)
-        {
             ResizeTexture(m_width, m_height);
-        }
-        else
-        {
-            IntPtr rendered = m_rendered;
-            if (rendered != m_updated)
-            {
-                m_Texture.SetPixels32(m_Pixels, 0);
-                m_Texture.Apply();
-                m_updated = rendered;
-            }
-        }
     }
 
-    public void RenderWindow()
+    public void RenderAsynchronously()
     {
         /* warning, this runs in the secondary thread */
         lock (lock_obj)

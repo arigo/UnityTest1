@@ -14,6 +14,9 @@ internal class CaptureDLL
     internal static extern int Capture_ListTopLevelWindows(IntPtr[] hwndarray, int maxcount);
 
     [DllImport("WindowCapture")]
+    internal static extern IntPtr Capture_GetForegroundWindow();
+
+    [DllImport("WindowCapture")]
     internal static extern void Capture_GetWindowSize(IntPtr hwnd, out int width, out int height);
 
     [DllImport("WindowCapture")]
@@ -29,6 +32,7 @@ public class UpdateTopLevelWindows : MonoBehaviour
 
     Dictionary<IntPtr, MirrorWindow> toplevel_windows;
     volatile IntPtr hwnd_create_me;
+    volatile IntPtr hwnd_foreground;
 
     private void Start()
     {
@@ -49,6 +53,7 @@ public class UpdateTopLevelWindows : MonoBehaviour
 
             int num_windows = CaptureDLL.Capture_ListTopLevelWindows(hWnds, MAX_WINDOWS);
             MirrorWindow[] all_windows;
+            MirrorWindow foreground_window;
 
             /* find the windows that have been opened; note that at most one will be mirrored per FixedUpdate() */
             lock (toplevel_windows)
@@ -59,12 +64,19 @@ public class UpdateTopLevelWindows : MonoBehaviour
                         hwnd_create_me = hWnds[i];
                 }
                 all_windows = toplevel_windows.Values.ToArray();
-            }
 
-            /* update the window contents */
+                hwnd_foreground = CaptureDLL.Capture_GetForegroundWindow();
+                toplevel_windows.TryGetValue(hwnd_foreground, out foreground_window);
+            }
+            if (foreground_window != null)
+                foreground_window.RenderAsynchronously();
+
+            /* update the window contents.  Update the foreground window a whole lot more often */
             foreach (MirrorWindow mirror in all_windows)
             {
-                mirror.RenderWindow();
+                mirror.RenderAsynchronously();
+                if (foreground_window != null)
+                    foreground_window.RenderAsynchronously();
             }
 
             stopwatch.Stop();
@@ -102,5 +114,10 @@ public class UpdateTopLevelWindows : MonoBehaviour
     {
         lock (toplevel_windows)
             toplevel_windows.Remove(hWnd);
+    }
+
+    public bool IsForeground(IntPtr hwnd)
+    {
+        return hwnd == hwnd_foreground;
     }
 }

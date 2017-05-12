@@ -31,6 +31,12 @@ int WINAPI Capture_ListTopLevelWindows(HWND *hwndarray, int maxcount)
 }
 
 __declspec(dllexport)
+HWND WINAPI Capture_GetForegroundWindow(void)
+{
+    return GetForegroundWindow();
+}
+
+__declspec(dllexport)
 void WINAPI Capture_GetWindowSize(HWND hwnd, int *width, int *height)
 {
     RECT rect;
