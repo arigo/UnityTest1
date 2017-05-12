@@ -13,14 +13,20 @@ internal class CaptureDLL
     [DllImport("WindowCapture")]
     internal static extern int Capture_ListTopLevelWindows(IntPtr[] hwndarray, int maxcount);
 
-    [DllImport("WindowCapture")]
-    internal static extern IntPtr Capture_GetForegroundWindow();
+    [DllImport("user32")]
+    internal static extern IntPtr GetForegroundWindow();
+
+    [DllImport("user32")]
+    internal static extern void SetForegroundWindow(IntPtr hwnd);
 
     [DllImport("WindowCapture")]
     internal static extern void Capture_GetWindowSize(IntPtr hwnd, out int width, out int height);
 
     [DllImport("WindowCapture")]
     internal static extern int Capture_UpdateContent(IntPtr hwnd, IntPtr pixels, int width, int height);
+
+    [DllImport("WindowCapture")]
+    internal static extern void Capture_SendMouseEvent(IntPtr hWnd, int kind, int x, int y);
 }
 
 
@@ -29,6 +35,7 @@ public class UpdateTopLevelWindows : MonoBehaviour
     public float pixelsPerMeter = 400;
     public float updatesPerSecond = 20;
     public int maxWindows = 150;
+    public MirrorWindow windowPrefab;
 
     Dictionary<IntPtr, MirrorWindow> toplevel_windows;
     volatile IntPtr hwnd_create_me;
@@ -65,7 +72,7 @@ public class UpdateTopLevelWindows : MonoBehaviour
                 }
                 all_windows = toplevel_windows.Values.ToArray();
 
-                hwnd_foreground = CaptureDLL.Capture_GetForegroundWindow();
+                hwnd_foreground = CaptureDLL.GetForegroundWindow();
                 toplevel_windows.TryGetValue(hwnd_foreground, out foreground_window);
             }
             if (foreground_window != null)
@@ -93,14 +100,11 @@ public class UpdateTopLevelWindows : MonoBehaviour
         IntPtr hwnd = hwnd_create_me;
         if (hwnd != (IntPtr)0)
         {
-            var gobj = new GameObject("window");
-            gobj.transform.position = transform.position +
-                new Vector3(UnityEngine.Random.Range(-5f, 5f), 0, UnityEngine.Random.Range(-5f, 5f));
-            gobj.transform.rotation = Quaternion.Euler(0, UnityEngine.Random.Range(0f, 360f), 0);
-            gobj.transform.localScale = Vector3.one / pixelsPerMeter;
-            gobj.transform.SetParent(transform);
+            var mirror = Instantiate<MirrorWindow>(windowPrefab, transform);
+            mirror.transform.localPosition = new Vector3(UnityEngine.Random.Range(-5f, 5f), 0, UnityEngine.Random.Range(-5f, 5f));
+            mirror.transform.localRotation = Quaternion.Euler(0, UnityEngine.Random.Range(0f, 360f), 0);
+            mirror.transform.localScale = Vector3.one / pixelsPerMeter;
 
-            var mirror = gobj.AddComponent<MirrorWindow>();
             mirror.toplevel_updater = this;
             mirror.hWnd = hwnd;
             lock (toplevel_windows)

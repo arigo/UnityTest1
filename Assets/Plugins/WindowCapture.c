@@ -31,12 +31,6 @@ int WINAPI Capture_ListTopLevelWindows(HWND *hwndarray, int maxcount)
 }
 
 __declspec(dllexport)
-HWND WINAPI Capture_GetForegroundWindow(void)
-{
-    return GetForegroundWindow();
-}
-
-__declspec(dllexport)
 void WINAPI Capture_GetWindowSize(HWND hwnd, int *width, int *height)
 {
     RECT rect;
@@ -113,4 +107,62 @@ error:
     if (hVDC != NULL)
         ReleaseDC(hwnd, hVDC);
     return result;
+}
+
+/*__declspec(dllexport)
+void WINAPI Capture_SendMouseEvent(HWND hwnd, int kind, int x, int y)
+{
+    int message, wparam;
+    LPARAM lparam;
+    POINT pt = { x, y };
+    while (1)
+    {
+        HWND hwnd1 = ChildWindowFromPointEx(hwnd, pt, CWP_SKIPINVISIBLE);
+        if (hwnd1 == NULL || hwnd1 == hwnd)
+            break;
+        MapWindowPoints(hwnd, hwnd1, &pt, 1);
+        hwnd = hwnd1;
+    }
+
+    message = 0;
+    wparam = 0;
+    lparam = MAKELPARAM(pt.x, pt.y);
+    switch (kind)
+    {
+        case 1: message = WM_LBUTTONDOWN; wparam = MK_LBUTTON; break;
+        case 2: message = WM_MOUSEMOVE;   wparam = MK_LBUTTON; break;
+        case 3: message = WM_LBUTTONUP;                        break;
+    }
+    SendMessage(hwnd, message, wparam, lparam); 
+}*/
+
+__declspec(dllexport)
+void WINAPI Capture_SendMouseEvent(HWND hwnd, int kind, int x, int y)
+{
+    INPUT input;
+    POINT pt = { x, y };
+    if (ClientToScreen(hwnd, &pt) == 0)
+        return;
+
+    ZeroMemory(&input, sizeof(input));
+    input.type = INPUT_MOUSE;
+    input.mi.dx = pt.x * 65536 / GetSystemMetrics(SM_CXSCREEN);
+    input.mi.dy = pt.y * 65536 / GetSystemMetrics(SM_CYSCREEN);
+    input.mi.dwFlags = MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE;
+    SendInput(1, &input, sizeof(INPUT));
+
+    switch (kind)
+    {
+        case 1:  /* mouse ldown */
+            input.mi.dwFlags = MOUSEEVENTF_LEFTDOWN;
+            break;
+
+        case 3:  /* mouse lup */
+            input.mi.dwFlags = MOUSEEVENTF_LEFTUP;
+            break;
+
+        default:
+            return;   /* done */
+    }
+    SendInput(1, &input, sizeof(INPUT));
 }
