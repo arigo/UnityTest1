@@ -29,9 +29,9 @@ sysinfo.txt
 *.apk
 *.unitypackage
 Assets/Lib/
-vr-sketch_Data/
+Test1_Data/
 Assets/Editor/
-vr-sketch.exe
-vr-sketch.7z
+Test1.exe
+player_*.pdb
 .*.swp
 *~
