@@ -1,4 +1,5 @@
-﻿using UnityEditor;
+﻿#if false
+using UnityEditor;
 using UnityEngine;
 using System.Collections;
 
@@ -22,3 +23,4 @@ public class ExposableMonobehaviourEditor : Editor
         ExposeProperties.Expose(m_fields);
     }
 }
+#endif

@@ -1,4 +1,5 @@
-﻿using UnityEditor;
+﻿#if false
+using UnityEditor;
 using UnityEngine;
 using System;
 using System.Collections;
@@ -170,3 +171,4 @@ public class PropertyField
         return propertyType != SerializedPropertyType.Generic;
     }
 }
+#endif

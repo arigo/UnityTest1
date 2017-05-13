@@ -252,18 +252,55 @@ public class MirrorWindow : ControllerTracker
      * Clicking...
      */
 
+#if false
+    struct MouseEvent {
+        public IntPtr hWnd;
+        public int kind, x, y;
+    };
+
+    static PCQueue<MouseEvent> mouse_event_queue;
+
+    static void SendMouseEvents()
+    {
+        while (true)
+        {
+            MouseEvent ev = mouse_event_queue.Pop();
+            CaptureDLL.Capture_SendMouseEvent(ev.hWnd, ev.kind, ev.x, ev.y);
+        }
+    }
+    
+    static void PushMouseEvent(IntPtr hWnd, int kind, int x, int y)
+    {
+        if (mouse_event_queue == null)
+        {
+            mouse_event_queue = new PCQueue<MouseEvent>();
+            new Thread(SendMouseEvents).Start();
+        }
+        MouseEvent ev = new MouseEvent { hWnd = hWnd, kind = kind, x = x, y = y };
+        mouse_event_queue.Push(ev);
+    }
+#endif
+    static void PushMouseEvent(IntPtr hWnd, int kind, int x, int y)
+    {
+        CaptureDLL.Capture_SendMouseEvent(hWnd, kind, x, y);
+    }
+
     public override void OnTriggerDown(Controller controller)
     {
         FlatPoint pt;
         if (ShowMouseLaser(controller, out pt))
-            CaptureDLL.Capture_SendMouseEvent(hWnd, 1, pt.x, pt.y);
+        {
+            PushMouseEvent(hWnd, 1, pt.x, pt.y);
+            foreach (var rend in mousePointer.GetComponentsInChildren<Renderer>())
+                rend.material.color = Color.red;
+        }
     }
 
     public override void OnTriggerDrag(Controller controller)
     {
         FlatPoint pt;
         if (ShowMouseLaser(controller, out pt))
-            CaptureDLL.Capture_SendMouseEvent(hWnd, 2, pt.x, pt.y);
+            PushMouseEvent(hWnd, 2, pt.x, pt.y);
     }
 
     public override void OnTriggerUp(Controller controller)
@@ -271,7 +308,8 @@ public class MirrorWindow : ControllerTracker
         FlatPoint pt;
         if (!ShowMouseLaser(controller, out pt))
             pt = new FlatPoint { x = -1, y = -1 };
-        CaptureDLL.Capture_SendMouseEvent(hWnd, 3, pt.x, pt.y);
+        PushMouseEvent(hWnd, 3, pt.x, pt.y);
+        HideMouseLaser();   /* reset the normal color */
     }
 
     /***********************************************************************************************
