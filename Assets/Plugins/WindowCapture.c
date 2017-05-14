@@ -4,6 +4,7 @@
 typedef struct {
     HWND *hwndptr;
     int remaining;
+    HWND desktop;
 } enum_info_t;
 
 static BOOL CALLBACK enum_window(HWND hwnd, LPARAM lParam)
@@ -11,7 +12,7 @@ static BOOL CALLBACK enum_window(HWND hwnd, LPARAM lParam)
     enum_info_t *info = (enum_info_t *)lParam;
     if (info->remaining > 0)
     {
-        if (IsWindowVisible(hwnd))
+        if (IsWindowVisible(hwnd) && hwnd != info->desktop)
         {
             *info->hwndptr++ = hwnd;
             info->remaining--;
@@ -25,7 +26,8 @@ static BOOL CALLBACK enum_window(HWND hwnd, LPARAM lParam)
 __declspec(dllexport)
 int WINAPI Capture_ListTopLevelWindows(HWND *hwndarray, int maxcount)
 {
-    enum_info_t info = { hwndarray, maxcount };
+    HWND desktop = GetDesktopWindow();
+    enum_info_t info = { hwndarray, maxcount, desktop };
     EnumWindows(enum_window, (LPARAM)&info);
     return maxcount - info.remaining;
 }

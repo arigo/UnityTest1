@@ -306,10 +306,10 @@ public class MirrorWindow : ControllerTracker
     public override void OnTriggerUp(Controller controller)
     {
         FlatPoint pt;
+        HideMouseLaser();   /* reset the normal color */
         if (!ShowMouseLaser(controller, out pt))
             pt = new FlatPoint { x = -1, y = -1 };
         PushMouseEvent(hWnd, 3, pt.x, pt.y);
-        HideMouseLaser();   /* reset the normal color */
     }
 
     /***********************************************************************************************
