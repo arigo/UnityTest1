@@ -32,9 +32,10 @@ internal class CaptureDLL
 
 public class UpdateTopLevelWindows : MonoBehaviour
 {
-    public float pixelsPerMeter = 400;
-    public float updatesPerSecond = 20;
-    public int maxWindows = 150;
+    public float pixelsPerMeter = 1200;
+    public int maxWindows = 50;
+    public Vector2 randomRange = new Vector2(3, 3);
+    public GameObject keyboardObject;
     public MirrorWindow windowPrefab;
 
     Dictionary<IntPtr, MirrorWindow> toplevel_windows;
@@ -52,11 +53,11 @@ public class UpdateTopLevelWindows : MonoBehaviour
     {
         int MAX_WINDOWS = maxWindows;
         IntPtr[] hWnds = new IntPtr[MAX_WINDOWS];
-        Stopwatch stopwatch = new Stopwatch();
+        //Stopwatch stopwatch = new Stopwatch();
 
         while (true)
         {
-            stopwatch.Start();
+            //stopwatch.Start();
 
             int num_windows = CaptureDLL.Capture_ListTopLevelWindows(hWnds, MAX_WINDOWS);
             MirrorWindow[] all_windows;
@@ -86,12 +87,13 @@ public class UpdateTopLevelWindows : MonoBehaviour
                     foreground_window.RenderAsynchronously();
             }
 
-            stopwatch.Stop();
+            /*stopwatch.Stop();
             int remaining_sleep = (int)(1000f / updatesPerSecond - stopwatch.ElapsedMilliseconds);
             if (remaining_sleep <= 0)
                 remaining_sleep = 1;
             Thread.Sleep(remaining_sleep);
-            stopwatch.Reset();
+            stopwatch.Reset();*/
+            Thread.Sleep(1);
         }
     }
 
@@ -101,7 +103,9 @@ public class UpdateTopLevelWindows : MonoBehaviour
         if (hwnd != (IntPtr)0)
         {
             var mirror = Instantiate<MirrorWindow>(windowPrefab, transform);
-            mirror.transform.localPosition = new Vector3(UnityEngine.Random.Range(-5f, 5f), 0, UnityEngine.Random.Range(-5f, 5f));
+            float rx = randomRange.x;
+            float rz = randomRange.y;
+            mirror.transform.localPosition = new Vector3(UnityEngine.Random.Range(-rx, rx), 0, UnityEngine.Random.Range(-rz, rz));
             mirror.transform.localRotation = Quaternion.Euler(0, UnityEngine.Random.Range(0f, 360f), 0);
             mirror.transform.localScale = Vector3.one / pixelsPerMeter;
 

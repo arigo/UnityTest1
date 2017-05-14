@@ -199,6 +199,16 @@ public class MirrorWindow : ControllerTracker
     public override void OnEnter(Controller controller)
     {
         CaptureDLL.SetForegroundWindow(hWnd);
+
+        var plane = new Plane(transform.forward, transform.position);
+        int sign = plane.GetSide(controller.position) ? -1 : 1;
+
+        Transform ktr = toplevel_updater.keyboardObject.transform;
+        Vector3 pos = transform.position - 0.16f * sign * transform.forward;
+        pos.y = ktr.position.y;
+        ktr.position = pos;
+        Vector3 rot = ktr.rotation.eulerAngles;
+        ktr.rotation = Quaternion.Euler(rot.x, transform.rotation.eulerAngles.y + (1-sign)*90, rot.z);
     }
 
     public override void OnMoveOver(Controller controller)
