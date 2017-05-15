@@ -168,3 +168,34 @@ void WINAPI Capture_SendMouseEvent(HWND hwnd, int kind, int x, int y)
     }
     SendInput(1, &input, sizeof(INPUT));
 }
+
+__declspec(dllexport)
+void WINAPI Capture_SendKeyEvent(int unichar)
+{
+    INPUT input;
+    ZeroMemory(&input, sizeof(input));
+    input.type = INPUT_KEYBOARD;
+
+    if (unichar > 0)
+    {
+        input.ki.wScan = unichar;
+        input.ki.dwFlags = KEYEVENTF_UNICODE;
+    }
+    else
+    {
+        int scan;
+        switch (unichar) {
+        case -1: scan = 14; break;   /* backspace */
+        case -2: scan = 28; break;   /* enter */
+        case -3: scan = 1;  break;   /* esc */
+        case -4: scan = 15; break;   /* tab */
+        default: return;
+        }
+        input.ki.wScan = scan;
+        input.ki.dwFlags = KEYEVENTF_SCANCODE;
+    }
+    SendInput(1, &input, sizeof(INPUT));
+
+    input.ki.dwFlags |= KEYEVENTF_KEYUP;
+    SendInput(1, &input, sizeof(INPUT));
+}

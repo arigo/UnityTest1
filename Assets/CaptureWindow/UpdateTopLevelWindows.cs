@@ -27,6 +27,9 @@ internal class CaptureDLL
 
     [DllImport("WindowCapture")]
     internal static extern void Capture_SendMouseEvent(IntPtr hWnd, int kind, int x, int y);
+
+    [DllImport("WindowCapture")]
+    internal static extern void Capture_SendKeyEvent(int unichar);
 }
 
 
@@ -35,7 +38,7 @@ public class UpdateTopLevelWindows : MonoBehaviour
     public float pixelsPerMeter = 1200;
     public int maxWindows = 50;
     public Vector2 randomRange = new Vector2(3, 3);
-    public GameObject keyboardObject;
+    public KeyboardClicker keyboard;
     public MirrorWindow windowPrefab;
 
     Dictionary<IntPtr, MirrorWindow> toplevel_windows;

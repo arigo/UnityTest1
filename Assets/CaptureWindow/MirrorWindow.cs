@@ -17,7 +17,6 @@ public class MirrorWindow : ControllerTracker
     Color32[] m_Pixels;
     GCHandle m_PixelsHandle;
     int m_width, m_height;
-    int m_lastframe, m_counter;
     object lock_obj;
 
     volatile IntPtr m_rendered;
@@ -199,16 +198,7 @@ public class MirrorWindow : ControllerTracker
     public override void OnEnter(Controller controller)
     {
         CaptureDLL.SetForegroundWindow(hWnd);
-
-        var plane = new Plane(transform.forward, transform.position);
-        int sign = plane.GetSide(controller.position) ? -1 : 1;
-
-        Transform ktr = toplevel_updater.keyboardObject.transform;
-        Vector3 pos = transform.position - 0.16f * sign * transform.forward;
-        pos.y = ktr.position.y;
-        ktr.position = pos;
-        Vector3 rot = ktr.rotation.eulerAngles;
-        ktr.rotation = Quaternion.Euler(rot.x, transform.rotation.eulerAngles.y + (1-sign)*90, rot.z);
+        ShowKeyboard(controller);
     }
 
     public override void OnMoveOver(Controller controller)
@@ -236,8 +226,11 @@ public class MirrorWindow : ControllerTracker
 
     void HideMouseLaser()
     {
-        Destroy(mousePointer.gameObject);
-        mousePointer = null;
+        if (mousePointer != null)
+        {
+            Destroy(mousePointer.gameObject);
+            mousePointer = null;
+        }
     }
 
     public override void OnLeave(Controller controller)
@@ -359,5 +352,45 @@ public class MirrorWindow : ControllerTracker
     {
         mode = Mode.Highlight;
         UpdateTexture();
+    }
+
+    /***********************************************************************************************
+     * Keyboard...
+     */
+    void ShowKeyboard(Controller controller)
+    {
+        var plane = new Plane(transform.forward, transform.position);
+        int sign = plane.GetSide(controller.position) ? -1 : 1;
+
+        Transform ktr = toplevel_updater.keyboard.transform;
+        Vector3 pos = transform.position - 0.08f * sign * transform.forward;
+        pos.y = ktr.position.y;
+        ktr.position = pos;
+        Vector3 rot = ktr.rotation.eulerAngles;
+        ktr.rotation = Quaternion.Euler(rot.x, transform.rotation.eulerAngles.y + (1 - sign) * 90, rot.z);
+
+        toplevel_updater.keyboard.onKeyboardTyping.RemoveAllListeners();
+        toplevel_updater.keyboard.onKeyboardTyping.AddListener(KeyboardTyping);
+    }
+
+    int foobar()
+    {
+        return 42;
+    }
+
+    void KeyboardTyping(KeyboardClicker.EKeyState state, string key)
+    {
+        switch (state)
+        {
+            case KeyboardClicker.EKeyState.Confirm:
+                for (int i = 0; i < key.Length; i++)
+                    CaptureDLL.Capture_SendKeyEvent(key[i]);
+                break;
+
+            case KeyboardClicker.EKeyState.Special_Backspace: CaptureDLL.Capture_SendKeyEvent(-1); break;
+            case KeyboardClicker.EKeyState.Special_Enter:     CaptureDLL.Capture_SendKeyEvent(-2); break;
+            case KeyboardClicker.EKeyState.Special_Esc:       CaptureDLL.Capture_SendKeyEvent(-3); break;
+            case KeyboardClicker.EKeyState.Special_Tab:       CaptureDLL.Capture_SendKeyEvent(-4); break;
+        }
     }
 }
