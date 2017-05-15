@@ -79,6 +79,7 @@ public class BallScene : MonoBehaviour {
     public Transform localCamera;
     public float padUpdatesFrequency = 15f;
     public float padExpectedUpdatesFrequency = 10f;
+    public ParticleSystem particleSystem;
 
     public List<BallInfo> balls;
     Dictionary<int, BallInfo> balls_by_id;

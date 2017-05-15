@@ -104,7 +104,15 @@ public class PongPad : MonoBehaviour {
         relative_velocity -= Mathf.Sign(side_position) * 2f * axis;   /* automatic extra impulse */
         ball.SetVelocity(relative_velocity + current_velocity);
 
-        padObject.GetComponent<PadIndex>().HapticPulse(0.5f);
+        padObject.GetComponent<PadIndex>().HapticPulse(0.6f);
+
+        ParticleSystem.EmitParams emitParams = new ParticleSystem.EmitParams();
+        //emitParams.applyShapeToPosition = true;
+        ParticleSystem ps = ballScene.particleSystem;
+        emitParams.applyShapeToPosition = true;
+        emitParams.position = ps.transform.InverseTransformPoint(ball.transform.position);
+        ps.Emit(emitParams, 20);
+
         return true;
     }
 
