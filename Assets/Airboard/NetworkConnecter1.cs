@@ -6,12 +6,11 @@ using UnityEngine;
 using WebSocketSharp;
 
 
-public class NetworkConnecter : MonoBehaviour
+public class NetworkConnecter1 : MonoBehaviour
 {
-
     public string hostName;
     public const int WEBSOCK_VERSION = 1;
-    public BallScene ballScene;
+    public DrawingScene drawingScene;
 
     volatile WebSocket ws1;
     volatile string queued_error;
@@ -33,7 +32,7 @@ public class NetworkConnecter : MonoBehaviour
         if (err != null)
         {
             queued_error = null;
-            ballScene.ReportMessage(err, true);
+            //ballScene.ReportMessage(err, true);
         }
 
         lock (queued_messages)
@@ -115,10 +114,8 @@ public class NetworkConnecter : MonoBehaviour
 
     /************************************************************************/
 
-    const int MSG_RESET = 0;
-    const int MSG_SPAWN = 1;
-    const int MSG_PADS = 2;
-    const int MSG_SPLASH = 3;
+    const int MSG_RESET = 10;
+    const int MSG_PADS = 12;
 
     void ProcessQueuedMessages()
     {
@@ -129,30 +126,20 @@ public class NetworkConnecter : MonoBehaviour
             {
                 case MSG_RESET:
                     Debug.Log("Connected to remote!");
-                    ballScene.MsgReset();
-                    break;
-
-                case MSG_SPAWN:
-                    ballScene.MsgSpawn(-(int)message[1],
-                        new Vector3(-message[2], message[3], -message[4]),
-                        new Vector3(-message[5], message[6], -message[7]));
+                    drawingScene.MsgReset();
                     break;
 
                 case MSG_PADS:
-                    int n, count = (message.Length - 1) / 6;
-                    ballScene.MsgRemotePadCount(count);
+                    int n, count = (message.Length - 1) / 7;
+                    drawingScene.MsgRemotePadCount(count);
                     for (n = 0; n < count; n++)
                     {
-                        int i = 1 + n * 6;
-                        ballScene.MsgRemotePad(n,
-                            new Vector3(-message[i], message[i + 1], -message[i + 2]),
-                            Quaternion.Euler(message[i + 3], message[i + 4] + 180, message[i + 5]));
+                        int i = 1 + n * 7;
+                        drawingScene.MsgRemotePad(n,
+                            new Vector3(-message[i], message[i + 1], message[i + 2]),
+                            Quaternion.Euler(message[i + 3], -message[i + 4], -message[i + 5]),
+                            message[i + 6]);
                     }
-                    break;
-
-                case MSG_SPLASH:
-                    ballScene.MsgSplash(-(int)message[1],
-                        new Vector3(-message[2], message[3], -message[4]));
                     break;
             }
         }
@@ -180,35 +167,23 @@ public class NetworkConnecter : MonoBehaviour
         _Send(new float[] { MSG_RESET });
     }
 
-    public void SendSpawn(int id, Vector3 position, Vector3 velocity)
+    public void SendPads(Vector3[] positions, Quaternion[] rotations, float[] drawings)
     {
-        _Send(new float[] { MSG_SPAWN, id,
-            position.x, position.y, position.z,
-            velocity.x, velocity.y, velocity.z });
-    }
-
-    public void SendPads(Vector3[] positions, Quaternion[] rotations)
-    {
-        var data = new float[1 + 6 * positions.Length];
+        var data = new float[1 + 7 * positions.Length];
         data[0] = MSG_PADS;
         for (int n = 0; n < positions.Length; n++)
         {
             Vector3 position = positions[n];
             Vector3 angles = rotations[n].eulerAngles;
-            int i = 1 + 6 * n;
+            int i = 1 + 7 * n;
             data[i + 0] = position.x;
             data[i + 1] = position.y;
             data[i + 2] = position.z;
             data[i + 3] = angles.x;
             data[i + 4] = angles.y;
             data[i + 5] = angles.z;
+            data[i + 6] = drawings[n];
         }
         _Send(data);
-    }
-
-    public void SendSplash(int id, Vector3 position)
-    {
-        _Send(new float[] { MSG_SPLASH, id,
-            position.x, position.y, position.z });
     }
 }
