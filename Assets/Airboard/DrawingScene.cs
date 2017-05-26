@@ -91,11 +91,11 @@ public class DrawingScene : MonoBehaviour
             local_pads.Clear();
             local_drawings.Clear();
 
-            local_pads.Add(BaroqueUI.BaroqueUI.GetHeadTransform());
+            local_pads.Add(Baroque.GetHeadTransform());
             local_drawings.Add(0);
 
             int index = 0;
-            foreach (var controller in BaroqueUI.BaroqueUI.GetControllers())
+            foreach (var controller in Baroque.GetControllers())
             {
                 index += 1;
                 if (controller.isActiveAndEnabled)
@@ -137,7 +137,7 @@ public class DrawingScene : MonoBehaviour
 
     float UpdateController(Controller controller, int index)
     {
-        controller.SetPointerPrefab(remotePadPrefab.gameObject);
+        controller.SetPointer(remotePadPrefab.gameObject);
 
         int result;
         if (controller.GetButton(controllerButton))

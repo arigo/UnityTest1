@@ -19,6 +19,9 @@ internal class CaptureDLL
     [DllImport("user32")]
     internal static extern void SetForegroundWindow(IntPtr hwnd);
 
+    [DllImport("user32")]
+    internal static extern int GetWindowTextW(IntPtr hwnd, [Out] char[] lpString, int maxCount);
+
     [DllImport("WindowCapture")]
     internal static extern void Capture_GetWindowSize(IntPtr hwnd, out int width, out int height);
 
@@ -38,7 +41,7 @@ public class UpdateTopLevelWindows : MonoBehaviour
     public float pixelsPerMeter = 1200;
     public int maxWindows = 50;
     public Vector2 randomRange = new Vector2(3, 3);
-    public KeyboardClicker keyboard;
+    public BaroqueUI.KeyboardClicker keyboard;
     public MirrorWindow windowPrefab;
 
     Dictionary<IntPtr, MirrorWindow> toplevel_windows;

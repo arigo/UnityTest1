@@ -7,7 +7,7 @@ using BaroqueUI;
 using UnityEngine;
 
 
-public class MirrorWindow : ControllerTracker
+public class MirrorWindow : MonoBehaviour
 {
     public UpdateTopLevelWindows toplevel_updater;
     public IntPtr hWnd;
@@ -31,6 +31,24 @@ public class MirrorWindow : ControllerTracker
         lock_obj = new object();
         quad1 = transform.Find("Front").gameObject;
         quad2 = transform.Find("Back").gameObject;
+
+        var ct = Controller.HoverTracker(this);
+        ct.computePriority = GetPriority;
+        ct.onEnter += OnEnter;
+        ct.onMoveOver += OnMoveOver;
+        ct.onLeave += OnLeave;
+        ct.onTriggerDown += OnTriggerDown;
+        ct.onTriggerDrag += OnTriggerDrag;
+        ct.onTriggerUp += OnTriggerUp;
+        ct.onGripDown += OnGripDown;
+        ct.onGripDrag += OnGripDrag;
+        ct.onGripUp += OnGripUp;
+        ct.onTouchDown += (ctrl) => { /* disable the normal teleport */ };
+
+        char[] text = new char[256];
+        int length = CaptureDLL.GetWindowTextW(hWnd, text, text.Length);
+        if (length > 0)
+            gameObject.name = new string(text, 0, length);
     }
 
     void ResizeTexture(int width, int height)
@@ -198,13 +216,13 @@ public class MirrorWindow : ControllerTracker
         return -2;
     }
 
-    public override void OnEnter(Controller controller)
+    void OnEnter(Controller controller)
     {
         CaptureDLL.SetForegroundWindow(hWnd);
         ShowKeyboard(controller);
     }
 
-    public override void OnMoveOver(Controller controller)
+    void OnMoveOver(Controller controller)
     {
         FlatPoint pt;
         ShowMouseLaser(controller, out pt);
@@ -236,22 +254,17 @@ public class MirrorWindow : ControllerTracker
         }
     }
 
-    public override void OnLeave(Controller controller)
+    void OnLeave(Controller controller)
     {
         HideMouseLaser();
     }
 
-    public override float GetPriority(Controller controller)
+    float GetPriority(Controller controller)
     {
         float dist = DistanceToPlane(controller);
         if (dist <= 0)
             return float.NegativeInfinity;
         return -dist;
-    }
-
-    public override bool CanStartTeleportAction(Controller controller)
-    {
-        return false;
     }
 
     /***********************************************************************************************
@@ -291,7 +304,7 @@ public class MirrorWindow : ControllerTracker
         CaptureDLL.Capture_SendMouseEvent(hWnd, kind, x, y);
     }
 
-    public override void OnTriggerDown(Controller controller)
+    void OnTriggerDown(Controller controller)
     {
         FlatPoint pt;
         if (ShowMouseLaser(controller, out pt))
@@ -302,14 +315,14 @@ public class MirrorWindow : ControllerTracker
         }
     }
 
-    public override void OnTriggerDrag(Controller controller)
+    void OnTriggerDrag(Controller controller)
     {
         FlatPoint pt;
         if (ShowMouseLaser(controller, out pt))
             PushMouseEvent(hWnd, 2, pt.x, pt.y);
     }
 
-    public override void OnTriggerUp(Controller controller)
+    void OnTriggerUp(Controller controller)
     {
         FlatPoint pt;
         HideMouseLaser();   /* reset the normal color */
@@ -325,7 +338,7 @@ public class MirrorWindow : ControllerTracker
     Vector3 origin_position;
     Quaternion origin_rotation;
 
-    public override void OnGripDown(Controller controller)
+    void OnGripDown(Controller controller)
     {
         /* Called when the grip button is pressed. */
         HideMouseLaser();
@@ -337,7 +350,7 @@ public class MirrorWindow : ControllerTracker
         UpdateTexture();
     }
 
-    public override void OnGripDrag(Controller controller)
+    void OnGripDrag(Controller controller)
     {
         /* Dragging... */
         transform.rotation = FixOneRotation(controller.rotation * origin_rotation);
@@ -351,7 +364,7 @@ public class MirrorWindow : ControllerTracker
         return Quaternion.Euler(euler);
     }
 
-    public override void OnGripUp(Controller controller)
+    void OnGripUp(Controller controller)
     {
         mode = Mode.Highlight;
         UpdateTexture();
