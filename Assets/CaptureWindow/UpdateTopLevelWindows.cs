@@ -49,7 +49,19 @@ public class UpdateTopLevelWindows : MonoBehaviour
     {
         hwnd_create_me = (IntPtr)0;
         toplevel_windows = new Dictionary<IntPtr, MirrorWindow>();
-        new Thread(UpdateMirrors).Start();
+        new Thread(ThreadUpdateMirrors).Start();
+    }
+
+    void ThreadUpdateMirrors()
+    {
+        try
+        {
+            UpdateMirrors();
+        }
+        catch (Exception e)
+        {
+            UnityEngine.Debug.LogException(e);
+        }
     }
 
     public void UpdateMirrors()

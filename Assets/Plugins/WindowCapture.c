@@ -89,7 +89,11 @@ int WINAPI Capture_UpdateContent(HWND hwnd, unsigned char *pixels,
     SelectObject( hFDC, hbmBitmap );
     SetMapMode(hFDC, GetMapMode(hVDC));
 
+#if 1
     BitBlt(hFDC, 0, 0, width, height, hVDC, 0, 0, SRCCOPY);
+#else
+    PrintWindow(hwnd, hFDC, PW_CLIENTONLY);
+#endif
     GdiFlush();
 
     for (i = 0; i < width * height * 4; i += 4)

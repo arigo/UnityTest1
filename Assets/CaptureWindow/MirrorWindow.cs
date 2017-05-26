@@ -137,6 +137,9 @@ public class MirrorWindow : ControllerTracker
     public void RenderAsynchronously()
     {
         /* warning, this runs in the secondary thread */
+        if (lock_obj == null)
+            return;   /* not Start()ed yet */
+
         lock (lock_obj)
         {
             /* XXX fix me: should handle better the situation where the window is resized a lot */
@@ -371,11 +374,6 @@ public class MirrorWindow : ControllerTracker
 
         toplevel_updater.keyboard.onKeyboardTyping.RemoveAllListeners();
         toplevel_updater.keyboard.onKeyboardTyping.AddListener(KeyboardTyping);
-    }
-
-    int foobar()
-    {
-        return 42;
     }
 
     void KeyboardTyping(KeyboardClicker.EKeyState state, string key)
