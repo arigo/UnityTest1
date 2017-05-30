@@ -33,5 +33,6 @@ Test1_Data/
 Assets/Editor/
 Test1.exe
 player_*.pdb
+*.VC.db
 .*.swp
 *~

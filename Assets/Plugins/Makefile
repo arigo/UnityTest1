@@ -1,2 +1,2 @@
-WindowCapture.dll: WindowCapture.c
-	cl /LD WindowCapture.c user32.lib gdi32.lib
+WindowCapture.dll: WindowCapture.cpp
+	cl /LD WindowCapture.cpp user32.lib gdi32.lib d3d9.lib

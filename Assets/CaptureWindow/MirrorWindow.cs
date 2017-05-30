@@ -162,8 +162,17 @@ public class MirrorWindow : MonoBehaviour
         {
             /* XXX fix me: should handle better the situation where the window is resized a lot */
             if (m_PixelsHandle.IsAllocated)
-                if (CaptureDLL.Capture_UpdateContent(hWnd, m_PixelsHandle.AddrOfPinnedObject(), m_width, m_height) != 0)
+            {
+                int r = CaptureDLL.Capture_UpdateContent(hWnd, m_PixelsHandle.AddrOfPinnedObject(), m_width, m_height);
+                if (r > 0)
+                {
                     m_rendered = (IntPtr)((long)m_rendered + 1);
+                }
+                else if (r < 0)
+                {
+                    Debug.LogError("Capture_UpdateContent returned " + r);
+                }
+            }
         }
     }
 
