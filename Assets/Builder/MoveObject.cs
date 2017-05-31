@@ -15,6 +15,7 @@ public class MoveObject : MonoBehaviour
     BoxCollider coll;
     Transform face_select;
     Vector3 current_face;
+    public HashSet<MoveObject> touching;
 
     private void Start()
     {
@@ -32,6 +33,29 @@ public class MoveObject : MonoBehaviour
         ct.onGripDrag += OnGripDrag;
         ct.onGripUp += (ctrl) => { Entering(); };
     }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        var mo = other.GetComponent<MoveObject>();
+        if (mo != null)
+        {
+            if (touching == null)
+                touching = new HashSet<MoveObject>();
+            touching.Add(mo);
+        }
+    }
+    private void OnTriggerExit(Collider other)
+    {
+        var mo = other.GetComponent<MoveObject>();
+        if (mo != null)
+        {
+            if (touching != null)
+                touching.Remove(mo);
+        }
+    }
+
+
+    /* =====   Selection   ===== */
 
     void SelectOutline(Material outline)
     {

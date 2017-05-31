@@ -7,7 +7,6 @@ using System;
 public class NewObjectMenu : MonoBehaviour
 {
     public Transform objectScene;
-    public PhysicMaterial physics;
 
     Transform playingScene;
     bool playing { get { return playingScene != null; } }
@@ -65,23 +64,54 @@ public class NewObjectMenu : MonoBehaviour
 
         Controller.ForceLeave();
 
+        var groups = new RepSep<MoveObject>();
         playingScene = new GameObject("Playing Scene").transform;
+
         for (int i = 0; i < objectScene.childCount; i++)
         {
-            var child = objectScene.GetChild(i);
-            var clone = Instantiate(child, playingScene, worldPositionStays: true);
+            var mo = objectScene.GetChild(i).GetComponent<MoveObject>();
+            if (mo.touching != null)
+            {
+                foreach (var mo2 in mo.touching)
+                    groups.Merge(mo, mo2);
+            }
+        }
+
+        var rbs = new Dictionary<MoveObject, Rigidbody>();
+        for (int i = 0; i < objectScene.childCount; i++)
+        {
+            var source = objectScene.GetChild(i);
+            var clone = Instantiate(source);
             Destroy(clone.GetComponent<MoveObject>());
-            Destroy(clone.GetComponent<BoxCollider>());
+            Destroy(clone.GetComponent<Rigidbody>());
 
-            var coll = clone.gameObject.AddComponent<MeshCollider>();
-            coll.inflateMesh = true;
-            coll.skinWidth = 0.0001f;
-            coll.convex = true;
-            coll.sharedMaterial = physics;
+            var coll = clone.GetComponent<MeshCollider>();
+            if (coll != null)
+            {
+                Destroy(clone.GetComponent<BoxCollider>());
+                coll.enabled = true;
+            }
+            else
+                clone.GetComponent<BoxCollider>().isTrigger = false;
 
-            var rb = clone.gameObject.AddComponent<Rigidbody>();
+            var mo = source.GetComponent<MoveObject>();
+            mo = groups.GetRep(mo);
+
+            Rigidbody rb;
+            if (!rbs.TryGetValue(mo, out rb))
+            {
+                var go = new GameObject("Group");
+                go.transform.SetParent(playingScene);
+                rb = go.AddComponent<Rigidbody>();
+                rb.isKinematic = false;
+                rb.useGravity = true;
+                rb.mass = 0;
+                rbs[mo] = rb;
+            }
             var scale = clone.transform.localScale;
-            rb.mass = scale.x * scale.y * scale.z;
+            rb.mass += scale.x * scale.y * scale.z * 1000;
+
+            clone.SetParent(rb.transform);
         }
 
         objectScene.gameObject.SetActive(false);
