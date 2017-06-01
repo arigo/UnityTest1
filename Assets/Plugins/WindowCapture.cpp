@@ -1,6 +1,8 @@
 #include <Windows.h>
 #include <d3d9.h>
 
+// needs 'd3d9.lib'
+
 
 extern "C" {
 	__declspec(dllexport) int WINAPI Capture_ListTopLevelWindows(HWND *hwndarray, int maxcount);

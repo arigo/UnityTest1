@@ -36,3 +36,6 @@ player_*.pdb
 *.VC.db
 .*.swp
 *~
+WindowCapture.exp
+WindowCapture.lib
+WindowCapture.obj
