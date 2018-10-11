@@ -2,21 +2,24 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Threading;
 using BaroqueUI;
 using UnityEngine;
 
 
 public class MirrorWindow : MonoBehaviour
 {
+
     public UpdateTopLevelWindows toplevel_updater;
     public IntPtr hWnd;
+    public int process;
+    public volatile int z_order;    /* 0 = topmost */
 
     GameObject quad1, quad2;
     Texture2D m_Texture;
     Color32[] m_Pixels;
     GCHandle m_PixelsHandle;
-    int m_width, m_height;
+    public int m_width, m_height;
+
     object lock_obj;
 
     volatile IntPtr m_rendered;
@@ -98,7 +101,7 @@ public class MirrorWindow : MonoBehaviour
 
     void UpdateTexture(bool only_if_changed = false)
     {
-        if (toplevel_updater.IsForeground(hWnd))
+        if (toplevel_updater.IsForeground(this))
         {
             if (mode == Mode.Nonhighlight)
                 mode = Mode.Highlight;
@@ -178,6 +181,7 @@ public class MirrorWindow : MonoBehaviour
 
     private void OnDestroy()
     {
+        HideMouseLaser();
         toplevel_updater.DestroyedWindow(hWnd);
         lock (lock_obj)
             m_PixelsHandle.Free();
@@ -273,7 +277,7 @@ public class MirrorWindow : MonoBehaviour
         float dist = DistanceToPlane(controller);
         if (dist <= 0)
             return float.NegativeInfinity;
-        return -dist;
+        return -dist - 0.0001f * z_order;
     }
 
     /***********************************************************************************************

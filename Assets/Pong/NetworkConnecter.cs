@@ -173,6 +173,10 @@ public class NetworkConnecter : MonoBehaviour
                 send_ready.Set();
             }
         }
+        else
+        {
+            queued_messages.Enqueue(data);
+        }
     }
 
     public void SendReset()

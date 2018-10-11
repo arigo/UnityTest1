@@ -33,6 +33,14 @@ int WINAPI Capture_ListTopLevelWindows(HWND *hwndarray, int maxcount)
 }
 
 __declspec(dllexport)
+DWORD WINAPI Capture_GetWindowProcess(HWND hwnd)
+{
+    DWORD process = 0;
+    GetWindowThreadProcessId(hwnd, &process);
+    return process;
+}
+
+__declspec(dllexport)
 void WINAPI Capture_GetWindowSize(HWND hwnd, int *width, int *height)
 {
     RECT rect;
@@ -45,6 +53,15 @@ void WINAPI Capture_GetWindowSize(HWND hwnd, int *width, int *height)
     {
         *width = *height = -1;
     }
+}
+
+__declspec(dllexport)
+void WINAPI Capture_GetWindowPos(HWND hwnd, int *x, int *y)
+{
+    POINT pt = { 0, 0 };
+    ClientToScreen(hwnd, &pt);
+    *x = pt.x;
+    *y = pt.y;
 }
 
 __declspec(dllexport)

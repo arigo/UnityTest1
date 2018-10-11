@@ -14,16 +14,19 @@ internal class CaptureDLL
     internal static extern int Capture_ListTopLevelWindows(IntPtr[] hwndarray, int maxcount);
 
     [DllImport("user32")]
-    internal static extern IntPtr GetForegroundWindow();
-
-    [DllImport("user32")]
     internal static extern void SetForegroundWindow(IntPtr hwnd);
 
     [DllImport("user32")]
     internal static extern int GetWindowTextW(IntPtr hwnd, [Out] char[] lpString, int maxCount);
 
     [DllImport("WindowCapture")]
+    internal static extern int Capture_GetWindowProcess(IntPtr hwnd);
+
+    [DllImport("WindowCapture")]
     internal static extern void Capture_GetWindowSize(IntPtr hwnd, out int width, out int height);
+
+    [DllImport("WindowCapture")]
+    internal static extern void Capture_GetWindowPos(IntPtr hwnd, out int x, out int y);
 
     [DllImport("WindowCapture")]
     internal static extern int Capture_UpdateContent(IntPtr hwnd, IntPtr pixels, int width, int height);
@@ -45,12 +48,13 @@ public class UpdateTopLevelWindows : MonoBehaviour
     public MirrorWindow windowPrefab;
 
     Dictionary<IntPtr, MirrorWindow> toplevel_windows;
-    volatile IntPtr hwnd_create_me;
-    volatile IntPtr hwnd_foreground;
+    IntPtr create_me;
+    object create_me_lock;
 
     private void Start()
     {
-        hwnd_create_me = (IntPtr)0;
+        create_me = (IntPtr)0;
+        create_me_lock = new object();
         toplevel_windows = new Dictionary<IntPtr, MirrorWindow>();
         new Thread(ThreadUpdateMirrors).Start();
     }
@@ -80,20 +84,28 @@ public class UpdateTopLevelWindows : MonoBehaviour
             int num_windows = CaptureDLL.Capture_ListTopLevelWindows(hWnds, MAX_WINDOWS);
             MirrorWindow[] all_windows;
             MirrorWindow foreground_window;
+            IntPtr loc_create_me = (IntPtr)0;
 
             /* find the windows that have been opened; note that at most one will be mirrored per FixedUpdate() */
             lock (toplevel_windows)
             {
-                for (int i = 0; i < num_windows; i++)
+                foreground_window = null;
+                for (int i = num_windows - 1; i >= 0; i--)
                 {
-                    if (!toplevel_windows.ContainsKey(hWnds[i]))
-                        hwnd_create_me = hWnds[i];
+                    IntPtr hwnd = hWnds[i];
+                    if (!toplevel_windows.ContainsKey(hwnd))
+                        loc_create_me = hwnd;
+                    else
+                    {
+                        foreground_window = toplevel_windows[hwnd];
+                        foreground_window.z_order = i;
+                    }
                 }
                 all_windows = toplevel_windows.Values.ToArray();
-
-                hwnd_foreground = CaptureDLL.GetForegroundWindow();
-                toplevel_windows.TryGetValue(hwnd_foreground, out foreground_window);
             }
+            lock (create_me_lock)
+                create_me = loc_create_me;
+
             if (foreground_window != null)
                 foreground_window.RenderAsynchronously();
 
@@ -117,33 +129,86 @@ public class UpdateTopLevelWindows : MonoBehaviour
 
     private void FixedUpdate()
     {
-        IntPtr hwnd = hwnd_create_me;
-        if (hwnd != (IntPtr)0)
+        IntPtr hwnd;
+        lock (create_me_lock)
         {
-            var mirror = Instantiate<MirrorWindow>(windowPrefab, transform);
-            float rx = randomRange.x;
-            float rz = randomRange.y;
-            mirror.transform.localPosition = new Vector3(UnityEngine.Random.Range(-rx, rx), 0, UnityEngine.Random.Range(-rz, rz));
-            mirror.transform.localRotation = Quaternion.Euler(0, UnityEngine.Random.Range(0f, 360f), 0);
-            mirror.transform.localScale = Vector3.one / pixelsPerMeter;
+            hwnd = create_me;
+            if (hwnd == (IntPtr)0)
+                return;
 
-            mirror.toplevel_updater = this;
-            mirror.hWnd = hwnd;
-            lock (toplevel_windows)
+            create_me = (IntPtr)0;
+        }
+
+        lock (toplevel_windows)
+        {
+            if (!toplevel_windows.ContainsKey(hwnd))
+            {
+                int process = CaptureDLL.Capture_GetWindowProcess(hwnd);
+
+                /* find the topmost window from the same process */
+                MirrorWindow best_sibling = null;
+                int best_z_order = 0x7fffffff;
+
+                foreach (var other in toplevel_windows.Values)
+                {
+                    if (other.process == process && other.z_order < best_z_order &&
+                        other.m_width > 0)
+                    {
+                        best_z_order = other.z_order;
+                        best_sibling = other;
+                    }
+                }
+
+                var mirror = Instantiate<MirrorWindow>(windowPrefab, transform);
+                mirror.toplevel_updater = this;
+                mirror.hWnd = hwnd;
+                mirror.process = process;
+                mirror.z_order = 0;   /* may be wrong, but will be fixed later */
+                mirror.transform.localScale = Vector3.one / pixelsPerMeter;
+
+                if (best_sibling == null)
+                {
+                    float rx = randomRange.x;
+                    float rz = randomRange.y;
+                    mirror.transform.localPosition = new Vector3(UnityEngine.Random.Range(-rx, rx), 0, UnityEngine.Random.Range(-rz, rz));
+                    mirror.transform.localRotation = Quaternion.Euler(0, UnityEngine.Random.Range(0f, 360f), 0);
+                }
+                else
+                {
+                    int ox, oy, nx, ny, sizex, sizey;
+                    CaptureDLL.Capture_GetWindowPos(best_sibling.hWnd, out ox, out oy);
+                    CaptureDLL.Capture_GetWindowPos(hwnd, out nx, out ny);
+                    CaptureDLL.Capture_GetWindowSize(hwnd, out sizex, out sizey);
+
+                    Vector3 new_attach_point = new Vector3(
+                        (ox + 0.5f * best_sibling.m_width) - (nx + 0.5f * sizex),
+                        (oy + best_sibling.m_height) - (ny + sizey),
+                        5);
+                    //UnityEngine.Debug.Log(new_attach_point);
+
+                    if (best_sibling.transform.InverseTransformPoint(BaroqueUI.Baroque.GetHeadTransform().position).z < 0)
+                    {
+                        new_attach_point.x = -new_attach_point.x;
+                        new_attach_point.z = -new_attach_point.z; 
+                    }
+
+                    mirror.transform.localRotation = best_sibling.transform.localRotation;
+                    mirror.transform.position = best_sibling.transform.TransformPoint(new_attach_point);
+                }
+
                 toplevel_windows[hwnd] = mirror;
-
-            hwnd_create_me = (IntPtr)0;
+            }
         }
     }
 
-    public void DestroyedWindow(IntPtr hWnd)
+    public void DestroyedWindow(IntPtr hwnd)
     {
         lock (toplevel_windows)
-            toplevel_windows.Remove(hWnd);
+            toplevel_windows.Remove(hwnd);
     }
 
-    public bool IsForeground(IntPtr hwnd)
+    public bool IsForeground(MirrorWindow window)
     {
-        return hwnd == hwnd_foreground;
+        return window.z_order == 0;
     }
 }
