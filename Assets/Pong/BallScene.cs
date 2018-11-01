@@ -13,9 +13,9 @@ public class BallInfo
     public const float MIN_X = -4f;
     public const float MAX_X = 4f;
     public const float MIN_Y = 0.32f;
-    public const float MAX_Y = 2.2f;
-    public const float MIN_Z = -1.25f;
-    public const float MAX_Z = 1.25f;
+    public const float MAX_Y = 1.7f;
+    public const float MIN_Z = -1f;
+    public const float MAX_Z = 1f;
 
     public Transform transform;
     public float speed, radius;
