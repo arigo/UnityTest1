@@ -11,7 +11,7 @@ public class CustomLightmap1 : MonoBehaviour {
 
         var lightmap_data = new LightmapData();
         /* renamed 'lightmapColor' in Unity 5.6? */
-        lightmap_data.lightmapLight = myTexture;
+        lightmap_data.lightmapColor = myTexture;
 
         var lightmaps = new LightmapData[] { lightmap_data };
         LightmapSettings.lightmapsMode = LightmapsMode.NonDirectional;

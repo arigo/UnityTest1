@@ -1,4 +1,6 @@
-﻿Shader "AR/WaterScreenEffect" {
+﻿// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
+
+Shader "AR/WaterScreenEffect" {
 	Properties{ _MainTex("", any) = "" {} }
 
 	CGINCLUDE
@@ -12,7 +14,7 @@
 	v2f vert(float4 vertex : POSITION, float2 uv : TEXCOORD0)
 	{
 		v2f o;
-		o.pos = mul(UNITY_MATRIX_MVP, vertex);
+		o.pos = UnityObjectToClipPos(vertex);
 		o.uv = uv;
 		return o;
 	}

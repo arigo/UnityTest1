@@ -37,8 +37,8 @@ public class RopeBuilder4 : MonoBehaviour {
             DragSegment(i);
 
         LineRenderer rend = GetComponent<LineRenderer>();
-        if (rend.numPositions != position.Length)
-            rend.numPositions = position.Length;
+        if (rend.positionCount != position.Length)
+            rend.positionCount = position.Length;
         rend.SetPositions(position);
     }
 

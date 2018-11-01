@@ -15,6 +15,8 @@ public class PadIndex : MonoBehaviour {
 
     public void HapticPulse(float strength)
     {
-        VRTK_SDK_Bridge.HapticPulseOnIndex(GetPadIndex(), strength);
+        //VRTK_SDK_Bridge.HapticPulseOnIndex(GetPadIndex(), strength);
+        if (Application.isPlaying)
+            SteamVR_Controller.Input((int)controller.GetComponent<SteamVR_TrackedObject>().index).TriggerHapticPulse((ushort)500);
     }
 }

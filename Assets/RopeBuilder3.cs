@@ -74,8 +74,8 @@ public class RopeBuilder3 : MonoBehaviour {
         }
 
         LineRenderer rend = GetComponent<LineRenderer>();
-        if (rend.numPositions != vertices.Length)
-            rend.numPositions = vertices.Length;
+        if (rend.positionCount != vertices.Length)
+            rend.positionCount = vertices.Length;
         rend.SetPositions(vertices);
     }
 }

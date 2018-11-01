@@ -130,8 +130,8 @@ public class DrawingScene : MonoBehaviour
             currently_drawing_line[index] = drawing_line;
             lines.Add(drawing_line);
         }
-        int i = drawing_line.numPositions;
-        drawing_line.numPositions = i + 1;
+        int i = drawing_line.positionCount;
+        drawing_line.positionCount = i + 1;
         drawing_line.SetPosition(i, c_position + c_rotation * Vector3.forward * 0.08f);
     }
 

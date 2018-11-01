@@ -1,4 +1,6 @@
-﻿Shader "AR/Jumelles" {
+﻿// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
+
+Shader "AR/Jumelles" {
 	Properties{ _MainTex("", any) = "" {} }
 
 	CGINCLUDE
@@ -16,7 +18,7 @@
 	v2f vert(float4 vertex : POSITION, float2 uv : TEXCOORD0)
 	{
 		v2f o;
-		o.pos = mul(UNITY_MATRIX_MVP, vertex);
+		o.pos = UnityObjectToClipPos(vertex);
 		o.uv = uv;
 		o.border = (mul(UNITY_MATRIX_MV, vertex) - 0.5) * 3 + 0.5;
 		o.border.x += _Delta_x;
